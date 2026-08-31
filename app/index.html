@@ -1,0 +1,1837 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<title>CRM Contable</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.6.0/echarts.min.js"></script>
+<style>
+  :root{
+    --paper:#F4F7F3;
+    --surface:#FFFFFF;
+    --surface-2:#EDF2EC;
+    --line:#D7E1D6;
+    --ink:#1B2624;
+    --ink-soft:#55655F;
+    --ink-faint:#8A9891;
+    --accent:#2A4B7C;
+    --accent-ink:#FFFFFF;
+    --accent-soft:#E4EBF3;
+    --good:#2E7D46;
+    --good-bg:#E4F1E7;
+    --warn:#B8600F;
+    --warn-bg:#FBEADA;
+    --critical:#C22F3D;
+    --critical-bg:#FBE4E6;
+    --reg-1:#3D63A6;
+    --reg-2:#1E8A72;
+    --reg-3:#C97A26;
+    --reg-4:#8B4A8F;
+    --wa-bg:#25D36622;
+    --wa-text:#1A9E4B;
+    --wa-border:#25D36655;
+    --org-dgi:#3D63A6;
+    --org-bps:#1E8A72;
+    --org-otro:#C97A26;
+    --shadow:0 1px 2px rgba(27,38,36,.06), 0 8px 24px -12px rgba(27,38,36,.18);
+    --radius:10px;
+    --font-display:'Newsreader', Georgia, 'Times New Roman', serif;
+    --font-body:'IBM Plex Sans', -apple-system, Segoe UI, sans-serif;
+    --font-mono:'IBM Plex Mono', 'SF Mono', Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#12181A;
+      --surface:#182022;
+      --surface-2:#1D2628;
+      --line:#2A3A38;
+      --ink:#E7EFE9;
+      --ink-soft:#A9BAB2;
+      --ink-faint:#6E8079;
+      --accent:#7EA0DA;
+      --accent-ink:#0F1720;
+      --accent-soft:#24344E;
+      --good:#4CAF6B;
+      --good-bg:#163722;
+      --warn:#D97F2E;
+      --warn-bg:#3A2712;
+      --critical:#E05468;
+      --critical-bg:#3A1A20;
+      --reg-1:#5C84C4;
+      --reg-2:#3DA285;
+      --reg-3:#C6832E;
+      --reg-4:#A56AA8;
+      --wa-bg:#25D3662E;
+      --wa-text:#3FD97A;
+      --wa-border:#25D36670;
+      --org-dgi:#5C84C4;
+      --org-bps:#3DA285;
+      --org-otro:#C6832E;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#12181A;
+    --surface:#182022;
+    --surface-2:#1D2628;
+    --line:#2A3A38;
+    --ink:#E7EFE9;
+    --ink-soft:#A9BAB2;
+    --ink-faint:#6E8079;
+    --accent:#7EA0DA;
+    --accent-ink:#0F1720;
+    --accent-soft:#24344E;
+    --good:#4CAF6B;
+    --good-bg:#163722;
+    --warn:#D97F2E;
+    --warn-bg:#3A2712;
+    --critical:#E05468;
+    --critical-bg:#3A1A20;
+    --reg-1:#5C84C4;
+    --reg-2:#3DA285;
+    --reg-3:#C6832E;
+    --reg-4:#A56AA8;
+    --wa-bg:#25D3662E;
+    --wa-text:#3FD97A;
+    --wa-border:#25D36670;
+    --org-dgi:#5C84C4;
+    --org-bps:#3DA285;
+    --org-otro:#C6832E;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--font-body);
+    font-size:14.5px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:var(--font-display);font-weight:600;margin:0;text-wrap:balance;color:var(--ink);}
+  .mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums;}
+  button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit;}
+  a{color:var(--accent);}
+  button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible, [tabindex]:focus-visible{
+    outline:2px solid var(--accent); outline-offset:2px;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:.001ms !important; transition-duration:.001ms !important;}
+  }
+
+  /* ---------- shell ---------- */
+  .app{display:grid; grid-template-columns:220px 1fr; min-height:100vh;}
+  .sidebar{
+    background:var(--surface); border-right:1px solid var(--line);
+    display:flex; flex-direction:column; padding:22px 14px;
+    position:sticky; top:0; height:100vh;
+  }
+  .brand{display:flex; align-items:baseline; gap:8px; padding:0 8px 20px; border-bottom:1px solid var(--line); margin-bottom:16px;}
+  .brand-mark{font-family:var(--font-display); font-size:22px; font-weight:600; letter-spacing:.2px;}
+  .brand-tag{font-size:10px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.08em;}
+  nav.navrail{display:flex; flex-direction:column; gap:2px;}
+  .navrail button{
+    display:flex; align-items:center; gap:10px; text-align:left;
+    background:none; border:none; border-radius:8px; padding:9px 10px;
+    color:var(--ink-soft); cursor:pointer; font-size:13.5px; font-weight:500;
+  }
+  .navrail button .ico{width:18px; height:18px; flex:none; opacity:.75;}
+  .navrail button:hover{background:var(--surface-2); color:var(--ink);}
+  .navrail button.active{background:var(--accent-soft); color:var(--accent);}
+  .navrail button.active .ico{opacity:1;}
+
+  .main{padding:28px 34px 60px; max-width:1180px;}
+  .view{display:none;}
+  .view.active{display:block;}
+  .view-head{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:20px; flex-wrap:wrap;}
+  .view-head h1{font-size:26px;}
+  .view-head p{margin:4px 0 0; color:var(--ink-soft); font-size:13.5px;}
+  .actions{display:flex; gap:8px; flex-wrap:wrap;}
+
+  .btn{
+    display:inline-flex; align-items:center; gap:6px; border-radius:8px;
+    padding:8px 14px; font-size:13px; font-weight:600; cursor:pointer; border:1px solid transparent;
+    white-space:nowrap;
+  }
+  .btn-primary{background:var(--accent); color:var(--accent-ink);}
+  .btn-primary:hover{filter:brightness(1.06);}
+  .btn-outline{background:var(--surface); border-color:var(--line); color:var(--ink);}
+  .btn-outline:hover{background:var(--surface-2);}
+  .btn-ghost{background:none; border:none; color:var(--accent); padding:6px 8px;}
+  .btn-wa{background:var(--wa-bg); color:var(--wa-text); border:1px solid var(--wa-border);}
+  .btn-sm{padding:5px 10px; font-size:12px; border-radius:6px;}
+  .btn[disabled]{opacity:.5; cursor:not-allowed;}
+
+  /* ---------- stat tiles ---------- */
+  .stat-row{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px;}
+  .stat-tile.clickable{cursor:pointer; transition:border-color .12s;}
+  .stat-tile.clickable:hover{border-color:var(--accent);}
+  .stat-tile{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; box-shadow:var(--shadow);}
+  .stat-label{font-size:11.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-faint); font-weight:600;}
+  .stat-value{font-family:var(--font-mono); font-size:24px; font-weight:600; margin-top:6px; font-variant-numeric:tabular-nums;}
+  .stat-sub{font-size:12px; color:var(--ink-soft); margin-top:3px;}
+
+  /* ---------- panels/cards ---------- */
+  .panel{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px 20px; margin-bottom:18px;}
+  .panel-head{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:12px; gap:10px;}
+  .panel-head h2{font-size:16px;}
+  .panel-head .hint{font-size:11.5px; color:var(--ink-faint);}
+  .chart-row{display:grid; grid-template-columns:1.3fr 1fr; gap:18px; align-items:stretch;}
+  .chart-row-3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:18px; align-items:stretch;}
+  @media (max-width:900px){ .chart-row, .chart-row-3{grid-template-columns:1fr;} .stat-row{grid-template-columns:repeat(2,1fr);} .app{grid-template-columns:1fr;} .sidebar{position:relative; height:auto;} }
+
+  svg text{font-family:var(--font-body);}
+  .chart-caption{font-size:12px; fill:var(--ink-soft);}
+  .chart-value{font-family:var(--font-mono); font-size:12px; font-weight:600; fill:var(--ink);}
+  .grid-line{stroke:var(--line); stroke-width:1;}
+  .echart{width:100%;}
+  .curr-toggle{display:flex; gap:2px; background:var(--surface-2); padding:2px; border-radius:7px;}
+  .curr-toggle button{background:none; border:none; padding:3px 9px; border-radius:5px; font-size:11px; font-weight:700; color:var(--ink-soft); cursor:pointer; font-family:var(--font-mono);}
+  .curr-toggle button.active{background:var(--surface); color:var(--accent); box-shadow:var(--shadow);}
+
+  /* ---------- chips ---------- */
+  .chip{display:inline-flex; align-items:center; gap:6px; padding:3px 9px 3px 7px; border-radius:100px; font-size:11.5px; font-weight:600; white-space:nowrap;}
+  .chip .dot{width:7px; height:7px; border-radius:50%; flex:none;}
+  .chip--good{background:var(--good-bg); color:var(--good);} .chip--good .dot{background:var(--good);}
+  .chip--warn{background:var(--warn-bg); color:var(--warn);} .chip--warn .dot{background:var(--warn);}
+  .chip--critical{background:var(--critical-bg); color:var(--critical);} .chip--critical .dot{background:var(--critical);}
+  .chip--neutral{background:var(--surface-2); color:var(--ink-soft);}
+  .reg-tag{display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:600; padding:2px 8px; border-radius:100px; background:var(--surface-2);}
+  .reg-tag .dot{width:7px; height:7px; border-radius:50%;}
+
+  /* ---------- lists ---------- */
+  .list-row{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid var(--line);}
+  .list-row:last-child{border-bottom:none;}
+  .list-main{display:flex; flex-direction:column; gap:2px; min-width:0;}
+  .list-title{font-weight:600; font-size:13.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .list-sub{font-size:12px; color:var(--ink-soft);}
+  .list-side{display:flex; align-items:center; gap:10px; flex:none;}
+  .empty-state{padding:20px 4px; color:var(--ink-faint); font-size:13px; text-align:center;}
+
+  /* ---------- tables ---------- */
+  .table-wrap{overflow-x:auto;}
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  thead th{text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-faint); font-weight:600; padding:0 10px 8px; border-bottom:1px solid var(--line); white-space:nowrap;}
+  tbody td{padding:11px 10px; border-bottom:1px solid var(--line); vertical-align:middle;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr.clickable{cursor:pointer;}
+  tbody tr.clickable:hover{background:var(--surface-2);}
+  td.num, th.num{text-align:right; font-family:var(--font-mono); font-variant-numeric:tabular-nums;}
+  .cell-name{font-weight:600;}
+  .cell-faint{color:var(--ink-faint); font-size:12px;}
+
+  .toolbar{display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; align-items:center;}
+  .search{flex:1; min-width:180px; position:relative;}
+  .search input{width:100%; padding:8px 12px; border:1px solid var(--line); border-radius:8px; background:var(--surface);}
+  .filter-tabs{display:flex; gap:4px; background:var(--surface-2); padding:3px; border-radius:8px;}
+  .filter-tabs button{background:none; border:none; padding:6px 12px; border-radius:6px; font-size:12.5px; font-weight:600; color:var(--ink-soft); cursor:pointer;}
+  .filter-tabs button.active{background:var(--surface); color:var(--accent); box-shadow:var(--shadow);}
+
+  /* ---------- forms ---------- */
+  .field{display:flex; flex-direction:column; gap:5px; margin-bottom:12px;}
+  .field label{font-size:12px; font-weight:600; color:var(--ink-soft);}
+  .field input, .field select, .field textarea{
+    padding:8px 10px; border:1px solid var(--line); border-radius:7px; background:var(--surface); color:var(--ink);
+  }
+  .field textarea{resize:vertical; min-height:60px;}
+  .field-row{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .field-help{font-size:11px; color:var(--ink-faint);}
+
+  /* ---------- modal ---------- */
+  .modal-overlay{position:fixed; inset:0; background:rgba(15,20,19,.5); display:none; align-items:flex-start; justify-content:center; padding:5vh 16px; overflow-y:auto; z-index:50;}
+  .modal-overlay.open{display:flex;}
+  .modal-panel{background:var(--surface); border-radius:14px; width:100%; max-width:560px; box-shadow:var(--shadow); border:1px solid var(--line);}
+  .modal-panel.wide{max-width:720px;}
+  .modal-head{display:flex; align-items:flex-start; justify-content:space-between; padding:18px 20px 14px; border-bottom:1px solid var(--line);}
+  .modal-head h2{font-size:18px;}
+  .modal-head .sub{font-size:12px; color:var(--ink-soft); margin-top:2px;}
+  .modal-close{background:none; border:none; cursor:pointer; color:var(--ink-faint); font-size:18px; line-height:1; padding:4px;}
+  .modal-close:hover{color:var(--ink);}
+  .modal-body{padding:18px 20px;}
+  .modal-foot{display:flex; justify-content:flex-end; gap:8px; padding:14px 20px 18px;}
+  .section-title{font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-faint); font-weight:700; margin:18px 0 8px;}
+  .section-title:first-child{margin-top:0;}
+  .oblig-row{display:flex; align-items:flex-start; gap:10px; padding:9px 0; border-bottom:1px solid var(--line);}
+  .oblig-row:last-child{border-bottom:none;}
+  .oblig-row input[type=checkbox]{width:16px; height:16px; flex:none; margin-top:3px;}
+  .oblig-main{flex:1; min-width:0;}
+  .oblig-name{font-weight:600; font-size:13px;}
+  .oblig-meta{font-size:11.5px; color:var(--ink-soft);}
+  .oblig-date{display:flex; flex-direction:column; align-items:flex-start; gap:4px; flex:none;}
+  .oblig-date > span.oblig-sub-label{margin-top:0;}
+  .oblig-date input{width:128px; padding:5px 7px; border:1px solid var(--line); border-radius:6px; font-size:12px;}
+  .oblig-notas{width:100%; margin-top:6px; padding:5px 7px; border:1px solid var(--line); border-radius:6px; font-size:12px; background:var(--surface);}
+
+  .folder-link{display:inline-flex; align-items:center; gap:4px; font-size:11.5px; font-weight:600; color:var(--accent); white-space:nowrap;}
+  .folder-link svg{width:13px; height:13px;}
+
+  .add-inline{border:1px dashed var(--line); border-radius:8px; padding:10px 12px; margin-top:8px;}
+  .add-inline-toggle{background:none; border:none; color:var(--accent); font-weight:600; font-size:12.5px; cursor:pointer; padding:2px 0;}
+  .add-inline-form{display:none; grid-template-columns:1.4fr .8fr .7fr 1fr auto; gap:8px; margin-top:10px; align-items:end;}
+  .add-inline-form.open{display:grid;}
+  .add-inline-form .field{margin-bottom:0;}
+  .add-inline-form input, .add-inline-form select{padding:6px 8px; font-size:12.5px; border:1px solid var(--line); border-radius:6px; background:var(--surface); width:100%;}
+
+  /* ---------- secciones plegables (ficha de cliente) ---------- */
+  .collapse-toggle{display:flex; align-items:center; justify-content:space-between; width:100%; background:none; border:1px solid var(--line); border-radius:8px; padding:9px 12px; cursor:pointer; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-top:4px;}
+  .collapse-toggle:hover{background:var(--surface-2);}
+  .collapse-toggle .chev{transition:transform .15s; flex:none;}
+  .collapse-toggle.open .chev{transform:rotate(180deg);}
+  .collapse-body{display:none; margin-top:8px;}
+  .collapse-body.open{display:block;}
+  .oblig-monto{display:flex; flex-direction:column; align-items:flex-start; gap:4px; flex:none;}
+  .oblig-monto input{width:100px; padding:5px 7px; border:1px solid var(--line); border-radius:6px; font-size:12px; font-family:var(--font-mono);}
+  .oblig-sub-label{font-size:10.5px; color:var(--ink-faint); margin-top:2px; white-space:nowrap;}
+
+  /* ---------- agenda ---------- */
+  .agenda-nav{display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom:16px;}
+  .agenda-nav button{background:var(--surface); border:1px solid var(--line); border-radius:8px; width:32px; height:32px; cursor:pointer; color:var(--ink-soft); font-size:15px;}
+  .agenda-nav button:hover{background:var(--surface-2);}
+  .agenda-nav h2{font-size:16px; text-transform:capitalize; min-width:160px; text-align:center;}
+  .agenda-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:10px; overflow:hidden;}
+  .agenda-dow{background:var(--surface-2); padding:7px 4px; text-align:center; font-size:10px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.03em;}
+  .agenda-cell{background:var(--surface); min-height:82px; padding:6px; cursor:pointer; display:flex; flex-direction:column; gap:3px;}
+  .agenda-cell:hover{background:var(--surface-2);}
+  .agenda-cell.empty{background:var(--paper); cursor:default;}
+  .agenda-cell.selected{box-shadow:inset 0 0 0 2px var(--accent);}
+  .agenda-daynum-row{display:flex; align-items:center; justify-content:space-between; gap:4px;}
+  .agenda-daynum{font-size:11.5px; font-weight:600; color:var(--ink-soft);}
+  .agenda-cell.today .agenda-daynum{background:var(--accent); color:var(--accent-ink); border-radius:50%; width:19px; height:19px; display:inline-flex; align-items:center; justify-content:center; font-size:10.5px;}
+  .agenda-tarea-badge{font-size:9px; font-weight:700; padding:1px 5px; border-radius:100px; background:var(--accent-soft); color:var(--accent); white-space:nowrap;}
+  .agenda-chip{font-size:9px; font-weight:600; padding:1px 5px; border-radius:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .agenda-chip--critical{background:var(--critical-bg); color:var(--critical);}
+  .agenda-chip--warn{background:var(--warn-bg); color:var(--warn);}
+  .agenda-chip--good{background:var(--good-bg); color:var(--good);}
+  .agenda-more{font-size:9px; color:var(--ink-faint); font-weight:600;}
+  .th-sort{cursor:pointer; user-select:none; white-space:nowrap;}
+  .th-sort:hover{color:var(--ink-soft);}
+  .th-sort .arrow{display:inline-block; margin-left:3px; opacity:.35; font-size:9px;}
+  .th-sort.active .arrow{opacity:1; color:var(--accent);}
+
+  /* ---------- portal del cliente ---------- */
+  .portal-shell{min-height:100vh; background:var(--paper);}
+  .portal-wrap{max-width:760px; margin:0 auto; padding:40px 24px 70px;}
+  .portal-login{max-width:340px; margin:60px auto 0; text-align:center;}
+  .portal-login .brand-mark{font-size:24px;}
+  .portal-login p{color:var(--ink-soft); margin:4px 0 24px;}
+  .portal-login .field{text-align:left;}
+  .portal-header{display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:20px; gap:12px;}
+  .portal-header h1{font-size:24px;}
+</style>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark">CRM Contable</span>
+    </div>
+    <nav class="navrail" id="navrail">
+      <button data-view="panel" class="active"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Panel</button>
+      <button data-view="clientes"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c0-3.6 2.5-6 5.5-6s5.5 2.4 5.5 6"/><circle cx="17.5" cy="9" r="2.4"/><path d="M15.8 14.3c2.6.2 4.7 2.4 4.7 5.7"/></svg>Clientes</button>
+      <button data-view="obligaciones"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 12h7M9 16h7M9 8.5h3"/></svg>Obligaciones</button>
+      <button data-view="cobros"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2.5" y="6" width="19" height="13" rx="2"/><path d="M2.5 10.5h19"/><path d="M6 15h4"/></svg>Cobros</button>
+      <button data-view="agenda"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9.5h18"/><path d="M8 3v3M16 3v3"/></svg>Agenda</button>
+    </nav>
+    <div class="sidebar-foot" style="margin-top:auto; padding-top:12px; border-top:1px solid var(--line); display:flex; flex-direction:column; gap:6px;">
+      <button type="button" id="btn-ir-portal" class="btn btn-outline btn-sm" style="width:100%; justify-content:center;">🔗 Portal del cliente</button>
+      <button type="button" class="btn btn-outline btn-sm btn-tema" style="width:100%; justify-content:center;" title="Cambiar modo claro/oscuro"><span class="tema-icono">🌙</span>&nbsp;<span class="tema-label">Modo oscuro</span></button>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <!-- ================= PANEL ================= -->
+    <section class="view active" data-view="panel">
+      <div class="view-head">
+        <div>
+          <h1>Panel</h1>
+          <p>Estado general de la cartera al día de hoy.</p>
+        </div>
+        <div class="actions" style="flex-direction:column; align-items:flex-end;">
+          <button class="btn btn-outline" id="btn-generar-honorarios" title="Es TU cobro, no un trámite del cliente: cada cliente te paga un honorario fijo por mes por tu trabajo. Este botón carga ese cobro para todos los clientes activos de una sola vez.">Facturar mis honorarios del mes</button>
+          <span class="field-help" style="margin-top:4px; max-width:300px; text-align:right;">Es tu cobro, no un trámite del cliente: cada cliente te paga un honorario fijo por mes por tu trabajo. Este botón carga ese cobro para todos los clientes activos de una sola vez, en vez de uno por uno.</span>
+        </div>
+      </div>
+
+      <div class="stat-row" id="stat-row"></div>
+
+      <div class="chart-row">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Tus honorarios por mes</h2>
+            <div class="curr-toggle" id="toggle-moneda-cobrado"><button data-m="UYU" class="active">UYU</button><button data-m="USD">USD</button></div>
+          </div>
+          <div class="echart" id="chart-cobrado" style="height:220px;"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>Cumplimiento de obligaciones</h2><span class="hint">% al día hoy</span></div>
+          <div class="echart" id="chart-cumplimiento" style="height:220px;"></div>
+        </div>
+      </div>
+
+      <div class="chart-row-3">
+        <div class="panel">
+          <div class="panel-head"><h2>Cartera por régimen</h2><span class="hint" id="chart-regimen-total"></span></div>
+          <div class="echart" id="chart-regimen" style="height:190px;"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>Vencimientos por organismo</h2><span class="hint">obligaciones activas</span></div>
+          <div class="echart" id="chart-organismo" style="height:190px;"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>Cobros pendientes</h2><span class="hint">por antigüedad</span></div>
+          <div class="echart" id="chart-antiguedad" style="height:190px;"></div>
+        </div>
+      </div>
+
+      <div class="chart-row">
+        <div class="panel" id="panel-proximos-vencimientos">
+          <div class="panel-head"><h2>Próximos vencimientos</h2><span class="hint">más urgentes primero</span></div>
+          <div id="lista-vencimientos"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>Cobros pendientes</h2><span class="hint">mayor monto primero</span></div>
+          <div id="lista-cobros-pendientes"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= CLIENTES ================= -->
+    <section class="view" data-view="clientes">
+      <div class="view-head">
+        <div>
+          <h1>Clientes</h1>
+          <p>Cartera de clientes del estudio.</p>
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary" id="btn-nuevo-cliente">+ Nuevo cliente</button>
+        </div>
+      </div>
+      <div class="toolbar">
+        <div class="search"><input type="text" id="buscar-cliente" placeholder="Buscar por nombre, CI o RUT…"></div>
+      </div>
+      <div class="panel">
+        <div class="table-wrap">
+          <table>
+            <thead id="thead-clientes"><tr>
+              <th class="th-sort" data-sort="nombre">Cliente<span class="arrow">▲</span></th><th>Régimen</th><th class="th-sort" data-sort="prioridad">Prioridad<span class="arrow">▲</span></th><th>Contacto</th><th class="num th-sort" data-sort="honorario">Honorario<span class="arrow">▲</span></th><th class="th-sort" data-sort="vencimiento">Vencimientos<span class="arrow">▲</span></th><th></th>
+            </tr></thead>
+            <tbody id="tbody-clientes"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= OBLIGACIONES ================= -->
+    <section class="view" data-view="obligaciones">
+      <div class="view-head">
+        <div>
+          <h1>Catálogo de obligaciones</h1>
+          <p>Tipos de trámite/declaración que se pueden asignar a cada cliente, con su periodicidad.</p>
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary" id="btn-nueva-obligacion">+ Nuevo tipo</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="table-wrap">
+          <table>
+            <thead id="thead-obligaciones"><tr>
+              <th>Obligación</th><th class="th-sort" data-sort="organismo">Organismo<span class="arrow">▲</span></th><th class="th-sort" data-sort="periodicidad">Periodicidad<span class="arrow">▲</span></th><th>Ventana / referencia</th>
+            </tr></thead>
+            <tbody id="tbody-obligaciones"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= COBROS ================= -->
+    <section class="view" data-view="cobros">
+      <div class="view-head">
+        <div>
+          <h1>Cobros</h1>
+          <p>Honorarios mensuales y cobros puntuales por cliente.</p>
+        </div>
+      </div>
+      <div class="toolbar">
+        <div class="filter-tabs" id="filtro-cobros">
+          <button data-f="todos" class="active">Todos</button>
+          <button data-f="pendiente">Pendientes</button>
+          <button data-f="parcial">Parciales</button>
+          <button data-f="cobrado">Cobrados</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="table-wrap">
+          <table>
+            <thead id="thead-cobros"><tr>
+              <th class="th-sort" data-sort="cliente">Cliente<span class="arrow">▲</span></th><th>Concepto</th><th class="th-sort" data-sort="mes">Mes<span class="arrow">▲</span></th><th class="num th-sort" data-sort="monto">Monto<span class="arrow">▲</span></th><th class="num th-sort" data-sort="pendiente">Pendiente<span class="arrow">▲</span></th><th class="th-sort" data-sort="estado">Estado<span class="arrow">▲</span></th><th></th>
+            </tr></thead>
+            <tbody id="tbody-cobros"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= AGENDA ================= -->
+    <section class="view" data-view="agenda">
+      <div class="view-head">
+        <div>
+          <h1>Agenda</h1>
+          <p>Vencimientos y tareas del mes, por día. Click en un día para verlo, agendarlo en Google Calendar o agregar una tarea.</p>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="agenda-nav">
+          <button type="button" id="agenda-prev">‹</button>
+          <h2 id="agenda-mes-label"></h2>
+          <button type="button" id="agenda-next">›</button>
+        </div>
+        <div class="agenda-grid" id="agenda-grid-head">
+          <div class="agenda-dow">Lun</div><div class="agenda-dow">Mar</div><div class="agenda-dow">Mié</div><div class="agenda-dow">Jue</div><div class="agenda-dow">Vie</div><div class="agenda-dow">Sáb</div><div class="agenda-dow">Dom</div>
+        </div>
+        <div class="agenda-grid" id="agenda-grid" style="margin-top:1px;"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ============ Portal del cliente (acceso separado, #portal) ============ -->
+<div class="portal-shell" id="portal-shell" style="display:none;">
+  <div class="portal-wrap">
+    <div class="portal-login" id="portal-login">
+      <div class="brand-mark" style="font-family:var(--font-display); font-weight:600;">CRM Contable</div>
+      <p>Portal del cliente</p>
+      <div class="field"><label>Código de acceso</label><input id="portal-codigo" type="text" placeholder="Ej. DELTA-101" autocomplete="off"></div>
+      <button class="btn btn-primary" id="btn-portal-entrar" style="width:100%; justify-content:center;">Ingresar</button>
+      <div class="field-help" id="portal-error" style="display:none; color:var(--critical); margin-top:8px;">Código no encontrado. Consultá con tu contador.</div>
+      <button type="button" class="btn btn-ghost btn-sm" id="btn-ir-admin" style="margin-top:18px;">¿Sos el contador? Ir al panel</button>
+      <button type="button" class="btn btn-outline btn-sm btn-tema" style="margin-top:10px; width:100%; justify-content:center;" title="Cambiar modo claro/oscuro"><span class="tema-icono">🌙</span>&nbsp;<span class="tema-label">Modo oscuro</span></button>
+    </div>
+    <div class="portal-dashboard" id="portal-dashboard" style="display:none;"></div>
+  </div>
+</div>
+
+<!-- ============ Modal: día de agenda (vencimientos + tareas) ============ -->
+<div class="modal-overlay" id="modal-dia-agenda">
+  <div class="modal-panel">
+    <div class="modal-head"><div><h2 id="mda-titulo">Día</h2></div><button class="modal-close" data-close>&times;</button></div>
+    <div class="modal-body">
+      <div class="section-title">Vencimientos</div>
+      <div id="mda-vencimientos"></div>
+      <div class="section-title">Tareas</div>
+      <div id="mda-tareas"></div>
+      <button type="button" class="btn btn-outline btn-sm" id="toggle-nueva-tarea" style="margin-top:6px;">+ Agregar tarea</button>
+      <div id="form-nueva-tarea" style="display:none; margin-top:12px; border:1px dashed var(--line); border-radius:9px; padding:14px;">
+        <div class="field"><label>Título</label><input id="mt-titulo" type="text" placeholder="Ej. Preparar documentación IVA"></div>
+        <div class="field"><label>Cliente (opcional)</label><select id="mt-cliente"></select></div>
+        <div class="field"><label>Notas (opcional)</label><textarea id="mt-notas" rows="2" placeholder="Detalle adicional…"></textarea></div>
+        <div class="actions">
+          <button type="button" class="btn btn-outline btn-sm" id="btn-cancelar-tarea">Cancelar</button>
+          <button type="button" class="btn btn-primary btn-sm" id="btn-guardar-tarea">Guardar tarea</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ Modal: ficha / nuevo cliente ============ -->
+<div class="modal-overlay" id="modal-cliente">
+  <div class="modal-panel wide">
+    <div class="modal-head">
+      <div>
+        <h2 id="mc-titulo">Nuevo cliente</h2>
+        <div class="sub" id="mc-sub"></div>
+      </div>
+      <button class="modal-close" data-close>&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="section-title">Datos</div>
+      <div class="field-row">
+        <div class="field"><label>Nombre / Razón social</label><input id="f-nombre" type="text" placeholder="Ej. Ferretería Núñez Hnos."></div>
+        <div class="field"><label>Tipo</label>
+          <select id="f-tipo"><option value="fisica">Persona física</option><option value="juridica">Persona jurídica</option></select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>CI / RUT</label><input id="f-cirut" type="text" placeholder="Ej. 4.123.456-7"></div>
+        <div class="field"><label>Régimen fiscal</label>
+          <select id="f-regimen">
+            <option value="monotributo">Monotributo</option>
+            <option value="literal_e">Unipersonal Literal E (IVA mínimo)</option>
+            <option value="iva_irae">IVA + IRAE (régimen general)</option>
+            <option value="irae_general">IRAE general (empresa)</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Teléfono (WhatsApp)</label><input id="f-tel" type="text" placeholder="Ej. 099123456"></div>
+        <div class="field"><label>Email</label><input id="f-email" type="text" placeholder="opcional"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Honorario mensual (lo que este cliente te paga a vos)</label><input id="f-honorario" type="number" min="0" step="500"></div>
+        <div class="field"><label>Moneda</label>
+          <select id="f-moneda"><option value="UYU">UYU</option><option value="USD">USD</option></select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Prioridad de seguimiento</label>
+          <select id="f-prioridad"><option value="leve">Leve</option><option value="moderada">Moderada</option><option value="urgente">Urgente</option></select>
+        </div>
+        <div class="field"><label>Carpeta digital (Drive, OneDrive…)</label><input id="f-drive" type="text" placeholder="https://drive.google.com/…"></div>
+      </div>
+      <div class="field"><label>Notas</label><textarea id="f-notas" placeholder="opcional"></textarea></div>
+
+      <div id="bloque-obligaciones" style="display:none;">
+        <div class="section-title">Obligaciones asignadas</div>
+        <div id="lista-oblig-cliente"></div>
+        <button type="button" class="collapse-toggle" id="toggle-oblig-catalogo"><span>+ Asignar otra obligación</span><span class="chev">⌄</span></button>
+        <div class="collapse-body" id="body-oblig-catalogo">
+          <div id="lista-oblig-catalogo"></div>
+        </div>
+
+        <div class="section-title">Historial de cobros</div>
+        <button type="button" class="collapse-toggle" id="toggle-historial-cobros"><span id="resumen-historial-cobros"></span><span class="chev">⌄</span></button>
+        <div class="collapse-body" id="body-historial-cobros">
+          <div id="lista-cobros-cliente"></div>
+        </div>
+        <div class="add-inline">
+          <button type="button" class="add-inline-toggle" id="toggle-add-cobro">+ Agregar cobro puntual</button>
+          <div class="add-inline-form" id="form-add-cobro">
+            <div class="field"><label>Concepto</label><input id="fc-concepto" type="text" placeholder="Ej. Informe especial"></div>
+            <div class="field"><label>Monto</label><input id="fc-monto" type="number" min="0" step="100"></div>
+            <div class="field"><label>Moneda</label><select id="fc-moneda"><option value="UYU">UYU</option><option value="USD">USD</option></select></div>
+            <div class="field"><label>Fecha</label><input id="fc-fecha" type="date"></div>
+            <button class="btn btn-primary btn-sm" id="btn-guardar-cobro-adhoc" type="button">Agregar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" data-close>Cancelar</button>
+      <button class="btn btn-primary" id="btn-guardar-cliente">Guardar cliente</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ Modal: nueva obligación de catálogo ============ -->
+<div class="modal-overlay" id="modal-obligacion">
+  <div class="modal-panel">
+    <div class="modal-head">
+      <div><h2>Nuevo tipo de obligación</h2><div class="sub">Se agrega al catálogo, después se asigna a los clientes que corresponda.</div></div>
+      <button class="modal-close" data-close>&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label>Nombre</label><input id="fo-nombre" type="text" placeholder="Ej. IVA mensual (régimen general)"></div>
+      <div class="field-row">
+        <div class="field"><label>Organismo</label><select id="fo-organismo"><option value="DGI">DGI</option><option value="BPS">BPS</option><option value="Otro">Otro</option></select></div>
+        <div class="field"><label>Periodicidad (días)</label><input id="fo-periodicidad" type="number" min="1" value="30"></div>
+      </div>
+      <div class="field-help" style="margin:-6px 0 12px;">Referencia: 30 ≈ mensual · 60 ≈ bimestral · 365 ≈ anual.</div>
+      <div class="field"><label>Ventana / referencia</label><input id="fo-ventana" type="text" placeholder="Ej. jun-ago, o vencimiento según terminación de RUT"></div>
+      <div class="field"><label>Descripción</label><textarea id="fo-descripcion" placeholder="opcional"></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" data-close>Cancelar</button>
+      <button class="btn btn-primary" id="btn-guardar-obligacion">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ Modal: registrar pago ============ -->
+<div class="modal-overlay" id="modal-pago">
+  <div class="modal-panel">
+    <div class="modal-head">
+      <div><h2>Registrar pago</h2><div class="sub" id="mp-sub"></div></div>
+      <button class="modal-close" data-close>&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="field-row">
+        <div class="field"><label>Monto a registrar</label><input id="fp-monto" type="number" min="0" step="100"></div>
+        <div class="field"><label>Fecha</label><input id="fp-fecha" type="date"></div>
+      </div>
+      <div class="field"><label>Método</label>
+        <select id="fp-metodo"><option>Transferencia</option><option>Efectivo</option><option>e-Cheque</option><option>Otro</option></select>
+      </div>
+      <button class="btn btn-outline btn-sm" id="btn-marcar-completo" type="button">Marcar cobrado completo</button>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" data-close>Cancelar</button>
+      <button class="btn btn-primary" id="btn-guardar-pago">Registrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ Modal: vista previa de honorarios del mes ============ -->
+<div class="modal-overlay" id="modal-preview-honorarios">
+  <div class="modal-panel">
+    <div class="modal-head">
+      <div><h2>Facturar honorarios del mes</h2><div class="sub">Se crea un cobro individual por cada cliente, por su propio monto — nunca uno genérico para todos.</div></div>
+      <button class="modal-close" data-close>&times;</button>
+    </div>
+    <div class="modal-body">
+      <div id="lista-preview-honorarios"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" data-close>Cancelar</button>
+      <button class="btn btn-primary" id="btn-confirmar-honorarios">Confirmar y generar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- helpers ---------------- */
+  const $ = (sel, root) => (root||document).querySelector(sel);
+  const $$ = (sel, root) => Array.from((root||document).querySelectorAll(sel));
+
+  /* ---------------- modo claro/oscuro ---------------- */
+  const LS_TEMA = 'UI_TEMA';
+  function temaActual(){
+    return document.documentElement.getAttribute('data-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  }
+  function aplicarTema(t){
+    document.documentElement.setAttribute('data-theme', t);
+    try{ localStorage.setItem(LS_TEMA, t); }catch(e){}
+    actualizarBotonTema();
+  }
+  function actualizarBotonTema(){
+    const actual = temaActual();
+    $$('.tema-icono').forEach(el => el.textContent = actual === 'dark' ? '☀️' : '🌙');
+    $$('.tema-label').forEach(el => el.textContent = actual === 'dark' ? 'Modo claro' : 'Modo oscuro');
+  }
+  (function initTema(){
+    try{
+      const guardado = localStorage.getItem(LS_TEMA);
+      if(guardado === 'light' || guardado === 'dark') document.documentElement.setAttribute('data-theme', guardado);
+    }catch(e){}
+  })();
+
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+  const hoyISO = () => new Date().toISOString().slice(0,10);
+  const addDaysISO = (iso, n) => { const d = new Date(iso+'T00:00:00'); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); };
+  const diffDias = (iso) => Math.round((new Date(iso+'T00:00:00') - new Date(hoyISO()+'T00:00:00')) / 86400000);
+  const fmtFecha = (iso) => { if(!iso) return '—'; const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; };
+  const fmtMes = (iso) => { const [y,m]=iso.split('-'); const meses=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']; return `${meses[+m-1]} ${y}`; };
+  const fmtMoneda = (monto, moneda) => `${moneda==='USD'?'U$S':'$'} ${Math.round(monto).toLocaleString('es-UY')}`;
+  const esc = (s) => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  const REGIMEN_LABEL = { monotributo:'Monotributo', literal_e:'Literal E', iva_irae:'IVA + IRAE', irae_general:'IRAE general' };
+  const REGIMEN_COLOR = { monotributo:'var(--reg-1)', literal_e:'var(--reg-2)', iva_irae:'var(--reg-3)', irae_general:'var(--reg-4)' };
+  const PRIORIDAD_LABEL = { leve:'Leve', moderada:'Moderada', urgente:'Urgente' };
+  const PRIORIDAD_COLOR = { leve:'var(--good)', moderada:'var(--warn)', urgente:'var(--critical)' };
+  const PRIORIDAD_ORDEN = { urgente:0, moderada:1, leve:2 };
+  function montoEnUYU(monto, moneda){ return moneda === 'USD' ? monto*40 : monto; }
+
+  /* ---------------- columnas ordenables ---------------- */
+  function wireSortable(theadId, state, onChange){
+    $$('#'+theadId+' .th-sort').forEach(th => {
+      th.addEventListener('click', () => {
+        const key = th.dataset.sort;
+        if(state.key === key) state.dir *= -1; else { state.key = key; state.dir = 1; }
+        actualizarFlechasSort(theadId, state);
+        onChange();
+      });
+    });
+    actualizarFlechasSort(theadId, state);
+  }
+  function actualizarFlechasSort(theadId, state){
+    $$('#'+theadId+' .th-sort').forEach(th => {
+      const activo = th.dataset.sort === state.key;
+      th.classList.toggle('active', activo);
+      const arrow = th.querySelector('.arrow');
+      if(arrow) arrow.textContent = activo ? (state.dir===1 ? '▲' : '▼') : '▲';
+    });
+  }
+  const folderIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V6z"/></svg>`;
+
+  function telWhatsapp(tel){
+    let d = String(tel||'').replace(/\D/g,'');
+    if(d.startsWith('0')) d = d.slice(1);
+    if(!d.startsWith('598')) d = '598' + d;
+    return d;
+  }
+  function waLink(tel, msg){ return `https://wa.me/${telWhatsapp(tel)}?text=${encodeURIComponent(msg)}`; }
+  function calendarLink(titulo, fechaISO, detalles){
+    const inicio = fechaISO.replace(/-/g,'');
+    const fin = addDaysISO(fechaISO, 1).replace(/-/g,'');
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(titulo)}&dates=${inicio}/${fin}&details=${encodeURIComponent(detalles)}`;
+  }
+
+  /* ---------------- estado / persistencia ---------------- */
+  const LS = {
+    clientes: 'LM_CLIENTES_V3',
+    obligaciones: 'LM_OBLIG_CATALOGO_V3',
+    clienteOblig: 'LM_CLIENTE_OBLIG_V3',
+    cobros: 'LM_COBROS_V3',
+    tareas: 'LM_TAREAS_V1'
+  };
+  function load(key, fallback){
+    try{ const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }catch(e){ return fallback; }
+  }
+  function save(key, data){ try{ localStorage.setItem(key, JSON.stringify(data)); }catch(e){} }
+
+  let CLIENTES = load(LS.clientes, null);
+  let OBLIGACIONES = load(LS.obligaciones, null);
+  let CLIENTE_OBLIG = load(LS.clienteOblig, null);
+  let COBROS = load(LS.cobros, null);
+  let TAREAS = load(LS.tareas, null);
+
+  if(!OBLIGACIONES){
+    OBLIGACIONES = [
+      {id:'iva_sp', nombre:'IVA Servicios Personales (F.1302)', organismo:'DGI', periodicidadDias:365, ventana:'jun-ago', descripcion:'Declaración anual para prestadores de servicios personales fuera de relación de dependencia.'},
+      {id:'irpf', nombre:'IRPF (F.1102 / F.1103)', organismo:'DGI', periodicidadDias:365, ventana:'jun-ago', descripcion:'F.1102 individual, F.1103 núcleo familiar.'},
+      {id:'iass', nombre:'IASS (F.1812)', organismo:'DGI', periodicidadDias:365, ventana:'abr-ago', descripcion:'Impuesto de Asistencia a la Seguridad Social, pasividades.'},
+      {id:'irae_anual', nombre:'IRAE anual', organismo:'DGI', periodicidadDias:365, ventana:'según cierre de ejercicio', descripcion:'Declaración anual de renta empresarial.'},
+      {id:'irae_anticipos', nombre:'Anticipos IRAE', organismo:'DGI', periodicidadDias:30, ventana:'mensual', descripcion:'Pagos a cuenta mensuales del IRAE anual.'},
+      {id:'iva_mensual', nombre:'IVA mensual (régimen general)', organismo:'DGI', periodicidadDias:30, ventana:'según terminación de RUT', descripcion:'Liquidación mensual de IVA para empresas de régimen general.'},
+      {id:'bps_nomina', nombre:'Planilla de trabajo BPS', organismo:'BPS', periodicidadDias:30, ventana:'mensual', descripcion:'Nómina de empleados, aportes patronales y personales.'},
+      {id:'sueldos', nombre:'Liquidación y pago de sueldos', organismo:'Otro', periodicidadDias:30, ventana:'mensual', descripcion:'Cálculo de haberes, retenciones y pago a los empleados del cliente.'},
+      {id:'irpf_retenciones', nombre:'Retenciones de IRPF sobre sueldos', organismo:'DGI', periodicidadDias:30, ventana:'mensual, junto con la nómina', descripcion:'El empleador retiene el IRPF del sueldo de sus dependientes y lo vuelca a DGI cada mes.'},
+      {id:'cert_unico_dgi', nombre:'Certificado Único DGI', organismo:'DGI', periodicidadDias:90, ventana:'vigencia habitual 90 días', descripcion:'Acredita estar al día con DGI — lo piden bancos, licitaciones, alquileres comerciales.'},
+      {id:'cert_comun_bps', nombre:'Certificado Común BPS', organismo:'BPS', periodicidadDias:180, ventana:'vigencia 180 días', descripcion:'Acredita estar al día con BPS.'},
+      {id:'patrimonio', nombre:'Impuesto al Patrimonio', organismo:'DGI', periodicidadDias:365, ventana:'abril, junto a los anticipos de marzo', descripcion:'Anual, para empresas con patrimonio neto fiscal por encima del mínimo. Tasa 1,5% (2,8% bancos/financieras).'},
+      {id:'pago_servicios', nombre:'Pago de servicios y gastos operativos', organismo:'Otro', periodicidadDias:30, ventana:'mensual', descripcion:'UTE, OSE, Antel, alquiler y otros gastos fijos que el estudio gestiona por el cliente.'}
+    ];
+    save(LS.obligaciones, OBLIGACIONES);
+  }
+
+  if(!CLIENTES){
+    const A = (n) => addDaysISO(hoyISO(), n);
+    CLIENTES = [
+      {id:'c1', nombre:'Constructora Delta SRL', tipo:'juridica', ciRut:'21.402.117.0011', telefono:'099452301', email:'admin@delta.com.uy', regimen:'irae_general', honorarioMensual:60000, moneda:'UYU', prioridad:'moderada', driveUrl:'', codigoAcceso:'DELTA-101', fechaAlta:A(-500), activo:true, notas:'Tiene 6 empleados en obra.'},
+      {id:'c2', nombre:'Ferretería Núñez Hnos.', tipo:'juridica', ciRut:'21.556.230.0018', telefono:'098771122', email:'nunezhnos@gmail.com', regimen:'iva_irae', honorarioMensual:32000, moneda:'UYU', prioridad:'leve', driveUrl:'https://drive.google.com/drive/folders/ejemplo-nunez', codigoAcceso:'NUNEZ-102', fechaAlta:A(-620), activo:true, notas:''},
+      {id:'c3', nombre:'Panadería La Espiga SRL', tipo:'juridica', ciRut:'21.334.881.0014', telefono:'094112233', email:'', regimen:'iva_irae', honorarioMensual:28000, moneda:'UYU', prioridad:'leve', driveUrl:'', codigoAcceso:'ESPIGA-103', fechaAlta:A(-300), activo:true, notas:''},
+      {id:'c4', nombre:'Lucía Ferreira — Diseño Gráfico', tipo:'fisica', ciRut:'4.556.213-4', telefono:'099887766', email:'lucia.dg@gmail.com', regimen:'literal_e', honorarioMensual:12000, moneda:'UYU', prioridad:'leve', driveUrl:'https://drive.google.com/drive/folders/ejemplo-lucia', codigoAcceso:'LUCIA-104', fechaAlta:A(-210), activo:true, notas:''},
+      {id:'c5', nombre:'Rodrigo Batista — Consultor IT', tipo:'fisica', ciRut:'3.998.221-1', telefono:'091223344', email:'', regimen:'literal_e', honorarioMensual:400, moneda:'USD', prioridad:'urgente', driveUrl:'', codigoAcceso:'RODRIGO-105', fechaAlta:A(-150), activo:true, notas:'Factura en dólares a una empresa de Argentina.'},
+      {id:'c6', nombre:'Martín Silveira', tipo:'fisica', ciRut:'4.887.001-9', telefono:'098001122', email:'', regimen:'monotributo', honorarioMensual:6000, moneda:'UYU', prioridad:'leve', driveUrl:'', codigoAcceso:'MARTIN-106', fechaAlta:A(-90), activo:true, notas:'Feria vecinal, monotributo social MIDES.'},
+      {id:'c7', nombre:'Almacén Doña Rosa', tipo:'fisica', ciRut:'3.556.774-2', telefono:'097665544', email:'', regimen:'monotributo', honorarioMensual:5000, moneda:'UYU', prioridad:'moderada', driveUrl:'', codigoAcceso:'DROSA-107', fechaAlta:A(-800), activo:true, notas:''},
+      {id:'c8', nombre:'Estudio Fongaro & Asoc.', tipo:'juridica', ciRut:'21.229.556.0013', telefono:'099334455', email:'contacto@fongaro.uy', regimen:'irae_general', honorarioMensual:45000, moneda:'UYU', prioridad:'leve', driveUrl:'https://drive.google.com/drive/folders/ejemplo-fongaro', codigoAcceso:'FONGARO-108', fechaAlta:A(-980), activo:true, notas:'Escritorio de arquitectura, 3 empleados.'},
+      {id:'c9', nombre:'Carpintería Bianchi', tipo:'fisica', ciRut:'3.771.204-8', telefono:'096554433', email:'', regimen:'literal_e', honorarioMensual:14000, moneda:'UYU', prioridad:'leve', driveUrl:'', codigoAcceso:'BIANCHI-109', fechaAlta:A(-60), activo:true, notas:'Unipersonal, taller propio.'},
+      {id:'c10', nombre:'Verónica Acosta — Traductora', tipo:'fisica', ciRut:'4.221.087-6', telefono:'092334411', email:'', regimen:'literal_e', honorarioMensual:9000, moneda:'UYU', prioridad:'leve', driveUrl:'', codigoAcceso:'VERONICA-110', fechaAlta:A(-40), activo:true, notas:''},
+      {id:'c11', nombre:'Kiosco El Sol', tipo:'fisica', ciRut:'3.667.902-0', telefono:'095112200', email:'', regimen:'monotributo', honorarioMensual:4500, moneda:'UYU', prioridad:'moderada', driveUrl:'', codigoAcceso:'ELSOL-111', fechaAlta:A(-25), activo:true, notas:''}
+    ];
+    save(LS.clientes, CLIENTES);
+  }
+
+  if(!CLIENTE_OBLIG){
+    const A = (n) => n===null ? null : addDaysISO(hoyISO(), n);
+    const R = (clienteId, obligacionId, ultimo, monto) => ({id:uid(), clienteId, obligacionId, activa:true, ultimoCumplimiento:A(ultimo), montoEstimado:monto||0, notas:''});
+    CLIENTE_OBLIG = [
+      // c1 Constructora Delta — irae_general, 6 empleados
+      R('c1','iva_mensual', -40, 48000),           // vencido
+      R('c1','irae_anticipos', -20, 32000),        // próximo
+      R('c1','irae_anual', -200, 0),
+      R('c1','bps_nomina', -3, 95000),             // al día
+      R('c1','sueldos', -3, 420000),
+      R('c1','irpf_retenciones', -3, 26000),
+      R('c1','cert_unico_dgi', -70, 0),            // próximo (periodicidad 90)
+      R('c1','cert_comun_bps', -160, 0),           // próximo (periodicidad 180)
+      R('c1','patrimonio', -300, 210000),
+      R('c1','pago_servicios', -2, 38000),
+      // c2 Ferretería — iva_irae
+      R('c2','iva_mensual', -5, 18000),
+      R('c2','irae_anticipos', -34, 9000),         // vencido
+      R('c2','irae_anual', -150, 0),
+      R('c2','cert_unico_dgi', -95, 0),            // vencido (periodicidad 90)
+      R('c2','pago_servicios', -3, 22000),
+      // c3 Panadería — iva_irae
+      R('c3','iva_mensual', -22, 11000),           // próximo
+      R('c3','irae_anticipos', -10, 6000),
+      R('c3','bps_nomina', -1, 32000),
+      R('c3','sueldos', -2, 38000),
+      R('c3','irpf_retenciones', -2, 3000),
+      R('c3','pago_servicios', -5, 15000),
+      // c4 Lucía — literal_e (unipersonal, sin empleados: no aplican sueldos/certificados)
+      R('c4','iva_sp', -300, 0),
+      R('c4','irpf', -300, 0),
+      // c5 Rodrigo — literal_e
+      R('c5','iva_sp', -370, 0),                   // vencido (pasó el año)
+      R('c5','irpf', -370, 0),
+      // c8 Estudio Fongaro — irae_general, 3 empleados
+      R('c8','iva_mensual', -8, 15000),
+      R('c8','irae_anticipos', -27, 12000),        // próximo
+      R('c8','irae_anual', -400, 0),
+      R('c8','bps_nomina', -18, 48000),            // próximo
+      R('c8','sueldos', -5, 165000),
+      R('c8','irpf_retenciones', -5, 11000),
+      R('c8','cert_comun_bps', -170, 0),           // próximo (periodicidad 180)
+      R('c8','patrimonio', -280, 95000),
+      R('c8','pago_servicios', -6, 28000)
+    ];
+    save(LS.clienteOblig, CLIENTE_OBLIG);
+  }
+
+  if(!COBROS){
+    const A = (n) => addDaysISO(hoyISO(), n);
+    const mesDe = (n) => addDaysISO(hoyISO(), n).slice(0,7);
+    let seed = [];
+    const clientesHon = CLIENTES.map(c => ({id:c.id, monto:c.honorarioMensual, moneda:c.moneda, fechaAlta:c.fechaAlta}));
+    // últimos 6 meses de honorarios, con estados y montos variados (no todos los clientes existían desde el principio)
+    const offsets = [-150,-120,-90,-60,-30,-2];
+    offsets.forEach((off, idx) => {
+      const mes = mesDe(off);
+      clientesHon.filter(c => c.fechaAlta <= A(off)).forEach(c => {
+        const generado = A(off - 3);
+        let pagos = [];
+        // mes flojo deliberado: hace ~90 días, un par de clientes no pagaron ese mes
+        const mesFlojo = (off === -90) && ['c2','c3'].includes(c.id);
+        if(mesFlojo){
+          pagos = [];
+        } else if(idx < offsets.length - 1){
+          // meses pasados: la mayoría cobrados completos, alguno parcial
+          if(c.id === 'c5' && idx === offsets.length - 2){
+            pagos = [{monto: Math.round(c.monto*0.5), fecha:A(off+10), metodo:'Transferencia'}];
+          } else if(c.id === 'c7' && idx === offsets.length - 2){
+            pagos = [];
+          } else {
+            pagos = [{monto:c.monto, fecha:A(off+7), metodo: idx%2? 'Transferencia':'e-Cheque'}];
+          }
+        } else {
+          // mes actual: recién generado, casi nada cobrado todavía
+          if(['c2','c8'].includes(c.id)){
+            pagos = [{monto:c.monto, fecha:A(off+1), metodo:'Transferencia'}];
+          } else if(c.id === 'c1'){
+            pagos = [{monto: Math.round(c.monto*0.4), fecha:A(off+1), metodo:'Efectivo'}];
+          } else {
+            pagos = [];
+          }
+        }
+        seed.push({id:uid(), clienteId:c.id, concepto:`Honorarios ${fmtMes(mes+'-01')}`, monto:c.monto, moneda:c.moneda, mesCorrespondiente:mes, fechaGeneracion:generado, pagos, notas:''});
+      });
+    });
+    // trabajo puntual que hace subir un mes por encima del resto
+    seed.push({id:uid(), clienteId:'c1', concepto:'Informe de auditoría interna', monto:180000, moneda:'UYU', mesCorrespondiente:mesDe(-60), fechaGeneracion:A(-58), pagos:[{monto:180000, fecha:A(-50), metodo:'Transferencia'}], notas:''});
+    COBROS = seed;
+    save(LS.cobros, COBROS);
+  }
+
+  if(!TAREAS){
+    const A = (n) => addDaysISO(hoyISO(), n);
+    TAREAS = [
+      {id:uid(), fecha:A(1), titulo:'Preparar documentación IVA', notas:'Falta la factura de compra de octubre.', clienteId:'c1', hecha:false, creada:hoyISO()},
+      {id:uid(), fecha:A(2), titulo:'Llamar a prospecto — panadería de barrio', notas:'Vino recomendado por Panadería La Espiga.', clienteId:null, hecha:false, creada:hoyISO()},
+      {id:uid(), fecha:A(-1), titulo:'Enviar certificado único a Ferretería', notas:'', clienteId:'c2', hecha:true, creada:A(-3)},
+      {id:uid(), fecha:A(4), titulo:'Revisar liquidación de sueldos de Fongaro', notas:'Confirmar aguinaldo.', clienteId:'c8', hecha:false, creada:hoyISO()}
+    ];
+    save(LS.tareas, TAREAS);
+  }
+
+  function persistAll(){ save(LS.clientes, CLIENTES); save(LS.obligaciones, OBLIGACIONES); save(LS.clienteOblig, CLIENTE_OBLIG); save(LS.cobros, COBROS); save(LS.tareas, TAREAS); }
+
+  /* ---------------- cálculos de dominio ---------------- */
+  function clienteById(id){ return CLIENTES.find(c => c.id === id); }
+  function obligById(id){ return OBLIGACIONES.find(o => o.id === id); }
+
+  function estadoVencimiento(co){
+    const cliente = clienteById(co.clienteId);
+    const oblig = obligById(co.obligacionId);
+    if(!cliente || !oblig) return null;
+    const base = co.ultimoCumplimiento || cliente.fechaAlta;
+    const proximo = addDaysISO(base, oblig.periodicidadDias);
+    const dias = diffDias(proximo);
+    let estado = 'aldia';
+    if(dias < 0) estado = 'vencido'; else if(dias <= 15) estado = 'proximo';
+    return { proximo, dias, estado, cliente, oblig, co };
+  }
+
+  function vencimientosActivos(){
+    return CLIENTE_OBLIG.filter(co => co.activa).map(estadoVencimiento).filter(Boolean);
+  }
+
+  function peorEstadoCliente(clienteId){
+    const propios = vencimientosActivos().filter(v => v.cliente.id === clienteId);
+    if(!propios.length) return null;
+    const orden = {vencido:2, proximo:1, aldia:0};
+    return propios.reduce((peor, v) => orden[v.estado] > orden[peor.estado] ? v : peor, propios[0]);
+  }
+
+  function pendienteDe(cobro){
+    const pagado = cobro.pagos.reduce((s,p) => s + p.monto, 0);
+    return Math.max(0, cobro.monto - pagado);
+  }
+  function estadoCobro(cobro){
+    const pend = pendienteDe(cobro);
+    if(pend <= 0) return 'cobrado';
+    return cobro.pagos.length ? 'parcial' : 'pendiente';
+  }
+  function pendienteTotalPorMoneda(){
+    const out = {UYU:0, USD:0};
+    COBROS.forEach(c => { out[c.moneda] = (out[c.moneda]||0) + pendienteDe(c); });
+    return out;
+  }
+  function cobradoEnMesPorMoneda(mesISO){
+    const out = {UYU:0, USD:0};
+    COBROS.forEach(c => {
+      c.pagos.filter(p => p.fecha.slice(0,7)===mesISO).forEach(p => { out[c.moneda] = (out[c.moneda]||0) + p.monto; });
+    });
+    return out;
+  }
+  function diasVencidoCobro(cobro){
+    // antigüedad del pendiente: días desde que se generó el cobro
+    return -diffDias(cobro.fechaGeneracion);
+  }
+  function bucketAntiguedad(dias){
+    if(dias <= 15) return 'aldia';
+    if(dias <= 30) return 'atraso1';
+    return 'atraso2';
+  }
+
+  function chipVencimiento(estado, dias){
+    const label = estado==='vencido' ? `Vencido hace ${Math.abs(dias)}d` : estado==='proximo' ? `Vence en ${dias}d` : `Al día`;
+    const cls = estado==='vencido' ? 'critical' : estado==='proximo' ? 'warn' : 'good';
+    return `<span class="chip chip--${cls}"><span class="dot"></span>${label}</span>`;
+  }
+  function chipCobro(estado){
+    const map = {pendiente:['critical','Pendiente'], parcial:['warn','Parcial'], cobrado:['good','Cobrado']};
+    const [cls,label] = map[estado];
+    return `<span class="chip chip--${cls}"><span class="dot"></span>${label}</span>`;
+  }
+  function regTag(regimen){
+    return `<span class="reg-tag"><span class="dot" style="background:${REGIMEN_COLOR[regimen]}"></span>${REGIMEN_LABEL[regimen]}</span>`;
+  }
+
+  function mensajeContextualCliente(c){
+    const peor = peorEstadoCliente(c.id);
+    if(peor && peor.estado !== 'aldia'){
+      return `Hola ${c.nombre}! Te escribo para recordarte que ${peor.dias<0?'venció':'se acerca el vencimiento de'} ${peor.oblig.nombre} (${peor.oblig.organismo}). Necesito la documentación para prepararlo a tiempo. ¡Gracias!`;
+    }
+    const propios = COBROS.filter(co => co.clienteId === c.id && estadoCobro(co) !== 'cobrado');
+    if(propios.length){
+      const totalPend = propios.reduce((s,co) => s + pendienteDe(co), 0);
+      return `Hola ${c.nombre}! Te recuerdo que tenés un pendiente de honorarios de ${fmtMoneda(totalPend, c.moneda)}. Cualquier consulta quedo atento/a. ¡Gracias!`;
+    }
+    return `Hola ${c.nombre}! Te escribo del estudio contable — ¿cómo estás? Cualquier cosa que necesites, avisame.`;
+  }
+
+  /* ---------------- charts (Apache ECharts) ---------------- */
+  const echartInstances = {};
+  function cssVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  function echColors(){
+    return {
+      ink: cssVar('--ink'), inkSoft: cssVar('--ink-soft'), inkFaint: cssVar('--ink-faint'),
+      line: cssVar('--line'), surface: cssVar('--surface'), accent: cssVar('--accent'),
+      good: cssVar('--good'), warn: cssVar('--warn'), critical: cssVar('--critical'),
+      reg1: cssVar('--reg-1'), reg2: cssVar('--reg-2'), reg3: cssVar('--reg-3'), reg4: cssVar('--reg-4'),
+      orgDgi: cssVar('--org-dgi'), orgBps: cssVar('--org-bps'), orgOtro: cssVar('--org-otro')
+    };
+  }
+  const FONT_UI = "'IBM Plex Sans', sans-serif";
+  const FONT_NUM = "'IBM Plex Mono', monospace";
+  function baseTooltip(c){
+    return { backgroundColor:c.surface, borderColor:c.line, borderWidth:1,
+      textStyle:{color:c.ink, fontFamily:FONT_UI, fontSize:12},
+      extraCssText:'box-shadow:0 8px 24px -12px rgba(0,0,0,.35); border-radius:8px; padding:8px 10px;' };
+  }
+  function getEchart(id){
+    const dom = document.getElementById(id);
+    if(!dom) return null;
+    if(!echartInstances[id] || echartInstances[id].isDisposed()){
+      echartInstances[id] = echarts.init(dom, null, {renderer:'svg'});
+    }
+    return echartInstances[id];
+  }
+  function resizeAllCharts(){ Object.values(echartInstances).forEach(ch => { if(ch && !ch.isDisposed()) ch.resize(); }); }
+  let resizeTimer = null;
+  window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(resizeAllCharts, 150); });
+  function onThemeMaybeChanged(){ if($('.view[data-view="panel"]').classList.contains('active')) renderPanel(); }
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', onThemeMaybeChanged);
+  new MutationObserver(onThemeMaybeChanged).observe(document.documentElement, {attributes:true, attributeFilter:['data-theme']});
+
+  let monedaChartCobrado = 'UYU';
+
+  function renderChartCobrado(){
+    const c = echColors();
+    const chart = getEchart('chart-cobrado');
+    if(!chart) return;
+    const meses = [];
+    for(let i=5;i>=0;i--){ const d = new Date(); d.setDate(1); d.setMonth(d.getMonth()-i); meses.push(d.toISOString().slice(0,7)); }
+    const moneda = monedaChartCobrado;
+    const totales = meses.map(m => COBROS.reduce((s,co) => co.moneda===moneda ? s + co.pagos.filter(p=>p.fecha.slice(0,7)===m).reduce((s2,p)=>s2+p.monto,0) : s, 0));
+    chart.setOption({
+      grid:{left:46, right:12, top:26, bottom:26},
+      tooltip:{...baseTooltip(c), trigger:'axis', axisPointer:{type:'shadow'}, formatter:(p)=> `${p[0].axisValueLabel}<br/><b>${fmtMoneda(p[0].value, moneda)}</b>`},
+      xAxis:{type:'category', data:meses.map(m=>fmtMes(m+'-01')), axisLine:{lineStyle:{color:c.line}}, axisTick:{show:false}, axisLabel:{color:c.inkSoft, fontFamily:FONT_UI, fontSize:11}},
+      yAxis:{type:'value', boundaryGap:[0,'25%'], splitLine:{lineStyle:{color:c.line, type:'dashed'}}, axisLabel:{color:c.inkFaint, fontFamily:FONT_NUM, fontSize:10, formatter:(v)=> v>=1000 ? (v/1000)+'k' : v}},
+      series:[{
+        type:'bar', data:totales, barMaxWidth:38,
+        itemStyle:{color:c.accent, borderRadius:[4,4,0,0]},
+        emphasis:{itemStyle:{color:c.accent, opacity:.85}},
+        label:{show:true, position:'top', formatter:(p)=> p.value>0 ? (moneda==='USD'?'U$S ':'$')+(p.value>=1000 ? Math.round(p.value/1000)+'k' : Math.round(p.value)) : '', color:c.ink, fontFamily:FONT_NUM, fontSize:11, fontWeight:600},
+        animationDuration:600, animationEasing:'cubicOut'
+      }]
+    }, true);
+  }
+
+  function renderChartRegimen(){
+    const c = echColors();
+    const chart = getEchart('chart-regimen');
+    if(!chart) return;
+    const orden = ['monotributo','literal_e','iva_irae','irae_general'];
+    const colors = [c.reg1, c.reg2, c.reg3, c.reg4];
+    const counts = orden.map(r => CLIENTES.filter(x => x.regimen===r && x.activo).length);
+    const total = counts.reduce((a,b)=>a+b,0);
+    $('#chart-regimen-total').textContent = `${total} clientes activos`;
+    chart.setOption({
+      grid:{left:98, right:30, top:6, bottom:6},
+      tooltip:{...baseTooltip(c), trigger:'item', formatter:(p)=> `${p.name}: <b>${p.value}</b> cliente(s)`},
+      xAxis:{type:'value', show:false},
+      yAxis:{type:'category', data:orden.map(r=>REGIMEN_LABEL[r]), inverse:true, axisLine:{show:false}, axisTick:{show:false}, axisLabel:{color:c.inkSoft, fontFamily:FONT_UI, fontSize:12}},
+      series:[{
+        type:'bar', barMaxWidth:20,
+        data:counts.map((v,i)=>({value:v, itemStyle:{color:colors[i], borderRadius:[0,4,4,0]}})),
+        label:{show:true, position:'right', color:c.ink, fontFamily:FONT_NUM, fontWeight:600, fontSize:12},
+        animationDuration:600
+      }]
+    }, true);
+  }
+
+  function renderChartOrganismo(){
+    const c = echColors();
+    const chart = getEchart('chart-organismo');
+    if(!chart) return;
+    const porOrg = {DGI:0, BPS:0, Otro:0};
+    vencimientosActivos().forEach(v => { porOrg[v.oblig.organismo] = (porOrg[v.oblig.organismo]||0) + 1; });
+    chart.setOption({
+      tooltip:{...baseTooltip(c), trigger:'item', formatter:(p)=> `${p.name}: <b>${p.value}</b> (${p.percent}%)`},
+      legend:{bottom:0, textStyle:{color:c.inkSoft, fontFamily:FONT_UI, fontSize:11}, itemWidth:10, itemHeight:10, icon:'circle'},
+      series:[{
+        type:'pie', radius:['42%','68%'], center:['50%','44%'], avoidLabelOverlap:true,
+        label:{show:true, formatter:'{d}%', color:c.inkSoft, fontFamily:FONT_NUM, fontSize:11},
+        labelLine:{lineStyle:{color:c.line}},
+        itemStyle:{borderColor:c.surface, borderWidth:2},
+        data:[
+          {name:'DGI', value:porOrg.DGI, itemStyle:{color:c.orgDgi}},
+          {name:'BPS', value:porOrg.BPS, itemStyle:{color:c.orgBps}},
+          {name:'Otro (sueldos, servicios)', value:porOrg.Otro, itemStyle:{color:c.orgOtro}}
+        ],
+        animationDuration:600
+      }]
+    }, true);
+  }
+
+  function renderChartCumplimiento(){
+    const c = echColors();
+    const chart = getEchart('chart-cumplimiento');
+    if(!chart) return;
+    const vencs = vencimientosActivos();
+    const alDia = vencs.filter(v => v.estado==='aldia').length;
+    const pct = vencs.length ? Math.round(alDia/vencs.length*100) : 100;
+    const color = pct>=70 ? c.good : pct>=40 ? c.warn : c.critical;
+    chart.setOption({
+      series:[{
+        type:'gauge', startAngle:200, endAngle:-20, min:0, max:100,
+        progress:{show:true, width:14, itemStyle:{color}},
+        axisLine:{lineStyle:{width:14, color:[[1, c.line]]}},
+        axisTick:{show:false}, splitLine:{show:false}, axisLabel:{show:false}, pointer:{show:false},
+        detail:{valueAnimation:true, formatter:'{value}%', color:c.ink, fontFamily:FONT_NUM, fontSize:26, fontWeight:600, offsetCenter:[0,'0%']},
+        title:{show:true, offsetCenter:[0,'62%'], color:c.inkFaint, fontFamily:FONT_UI, fontSize:11, width:140, overflow:'break'},
+        data:[{value:pct, name:`${alDia} de ${vencs.length} obligación(es) al día`}],
+        animationDuration:700
+      }]
+    }, true);
+  }
+
+  function renderChartAntiguedad(){
+    const c = echColors();
+    const chart = getEchart('chart-antiguedad');
+    if(!chart) return;
+    const abiertos = COBROS.filter(co => estadoCobro(co) !== 'cobrado');
+    const buckets = {aldia:0, atraso1:0, atraso2:0};
+    abiertos.forEach(co => buckets[bucketAntiguedad(diasVencidoCobro(co))]++);
+    const labels = ['Reciente ≤15d','16-30 días','+30 días'];
+    const vals = [buckets.aldia, buckets.atraso1, buckets.atraso2];
+    const colors = [c.good, c.warn, c.critical];
+    chart.setOption({
+      grid:{left:14, right:14, top:30, bottom:34},
+      tooltip:{...baseTooltip(c), trigger:'axis', axisPointer:{type:'shadow'}, formatter:(p)=> `${p[0].name}: <b>${p[0].value}</b> cobro(s) pendiente(s)`},
+      xAxis:{type:'category', data:labels, axisLine:{lineStyle:{color:c.line}}, axisTick:{show:false}, axisLabel:{color:c.inkSoft, fontFamily:FONT_UI, fontSize:10.5, interval:0}},
+      yAxis:{type:'value', show:false, boundaryGap:[0,'30%']},
+      series:[{
+        type:'bar', barMaxWidth:46,
+        data:vals.map((v,i)=>({value:v, itemStyle:{color:colors[i], borderRadius:[4,4,0,0]}})),
+        label:{show:true, position:'top', color:c.ink, fontFamily:FONT_NUM, fontWeight:600, fontSize:12},
+        animationDuration:600
+      }]
+    }, true);
+  }
+
+  /* ---------------- render: panel ---------------- */
+  function tareasHoyOAtrasadas(){ return TAREAS.filter(t => !t.hecha && t.fecha <= hoyISO()); }
+  function tareasProximos7Dias(){ const limite = addDaysISO(hoyISO(),7); return TAREAS.filter(t => !t.hecha && t.fecha > hoyISO() && t.fecha <= limite); }
+
+  function renderPanel(){
+    const cobradoMes = cobradoEnMesPorMoneda(hoyISO().slice(0,7));
+    const pendiente = pendienteTotalPorMoneda();
+    const vencs = vencimientosActivos();
+    const urgentes = vencs.filter(v => v.estado !== 'aldia').length;
+    const tareasUrgentes = tareasHoyOAtrasadas().length;
+    const tareasProximas = tareasProximos7Dias().length;
+
+    const usdLine = (obj) => obj.USD > 0 ? `<div class="stat-sub mono">+ ${fmtMoneda(obj.USD,'USD')}</div>` : '';
+
+    $('#stat-row').innerHTML = `
+      <div class="stat-tile"><div class="stat-label">Tus honorarios cobrados este mes</div><div class="stat-value">${fmtMoneda(cobradoMes.UYU,'UYU')}</div>${usdLine(cobradoMes)}<div class="stat-sub">pagos con fecha del mes en curso</div></div>
+      <div class="stat-tile"><div class="stat-label">Tus honorarios pendientes</div><div class="stat-value">${fmtMoneda(pendiente.UYU,'UYU')}</div>${usdLine(pendiente)}<div class="stat-sub">entre todos los cobros abiertos</div></div>
+      <div class="stat-tile clickable" id="tile-vencimientos" title="Ver la lista más abajo"><div class="stat-label">Vencimientos urgentes</div><div class="stat-value">${urgentes}</div><div class="stat-sub">próximos o vencidos</div></div>
+      <div class="stat-tile clickable" id="tile-tareas" title="Ir a la Agenda"><div class="stat-label">Tareas pendientes</div><div class="stat-value">${tareasUrgentes}</div><div class="stat-sub">${tareasProximas ? `hoy o atrasadas · +${tareasProximas} próximas` : 'hoy o atrasadas'}</div></div>
+    `;
+
+    renderChartCobrado();
+    renderChartRegimen();
+    renderChartOrganismo();
+    renderChartCumplimiento();
+    renderChartAntiguedad();
+    resizeAllCharts();
+
+    const top = vencs.filter(v=>v.estado!=='aldia').sort((a,b)=>a.dias-b.dias).slice(0,6);
+    $('#lista-vencimientos').innerHTML = top.length ? top.map(v => `
+      <div class="list-row">
+        <div class="list-main"><span class="list-title">${esc(v.cliente.nombre)}</span><span class="list-sub">${esc(v.oblig.nombre)}</span></div>
+        <div class="list-side">${chipVencimiento(v.estado, v.dias)}<a class="btn btn-sm btn-outline" target="_blank" rel="noopener" href="${calendarLink(`${v.oblig.nombre} — ${v.cliente.nombre}`, v.proximo, `Vencimiento de ${v.oblig.nombre} (${v.oblig.organismo}) para ${v.cliente.nombre}.`)}" title="Agendar recordatorio en tu Google Calendar">📅</a><a class="btn btn-sm btn-wa" target="_blank" rel="noopener" href="${waLink(v.cliente.telefono, `Hola ${v.cliente.nombre}! Te escribo para recordarte que ${v.dias<0?'venció':'se acerca el vencimiento de'} ${v.oblig.nombre} (${v.oblig.organismo}). Necesito la documentación para prepararlo a tiempo. ¡Gracias!`)}">WhatsApp</a></div>
+      </div>`).join('') : `<div class="empty-state">No hay vencimientos próximos ni atrasados.</div>`;
+
+    const pend = COBROS.filter(c => estadoCobro(c) !== 'cobrado').sort((a,b)=>pendienteDe(b)-pendienteDe(a)).slice(0,6);
+    $('#lista-cobros-pendientes').innerHTML = pend.length ? pend.map(c => {
+      const cli = clienteById(c.clienteId);
+      return `<div class="list-row">
+        <div class="list-main"><span class="list-title">${esc(cli?cli.nombre:'—')}</span><span class="list-sub">${esc(c.concepto)}</span></div>
+        <div class="list-side"><span class="mono">${fmtMoneda(pendienteDe(c), c.moneda)}</span>${chipCobro(estadoCobro(c))}</div>
+      </div>`;
+    }).join('') : `<div class="empty-state">No hay cobros pendientes.</div>`;
+
+    $('#tile-vencimientos').addEventListener('click', () => {
+      $('#panel-proximos-vencimientos').scrollIntoView({behavior:'smooth', block:'start'});
+    });
+    $('#tile-tareas').addEventListener('click', () => irA('agenda'));
+  }
+
+  /* ---------------- render: clientes ---------------- */
+  let sortClientes = {key:null, dir:1};
+  function ordenarClientes(lista){
+    if(!sortClientes.key) return lista;
+    const dir = sortClientes.dir;
+    const diasPeor = (id) => { const p = peorEstadoCliente(id); return p ? p.dias : Infinity; };
+    const cmp = {
+      nombre: (a,b) => a.nombre.localeCompare(b.nombre),
+      prioridad: (a,b) => PRIORIDAD_ORDEN[a.prioridad||'leve'] - PRIORIDAD_ORDEN[b.prioridad||'leve'],
+      honorario: (a,b) => montoEnUYU(a.honorarioMensual,a.moneda) - montoEnUYU(b.honorarioMensual,b.moneda),
+      vencimiento: (a,b) => diasPeor(a.id) - diasPeor(b.id)
+    };
+    return lista.slice().sort((a,b) => dir * cmp[sortClientes.key](a,b));
+  }
+  function renderClientes(){
+    const q = ($('#buscar-cliente').value||'').toLowerCase().trim();
+    let filtrados = CLIENTES.filter(c => !q || c.nombre.toLowerCase().includes(q) || c.ciRut.toLowerCase().includes(q));
+    filtrados = ordenarClientes(filtrados);
+    $('#tbody-clientes').innerHTML = filtrados.map(c => {
+      const peor = peorEstadoCliente(c.id);
+      return `<tr class="clickable" data-id="${c.id}">
+        <td><div class="cell-name">${esc(c.nombre)} ${c.driveUrl ? `<a class="folder-link" href="${esc(c.driveUrl)}" target="_blank" rel="noopener" title="Abrir carpeta digital" onclick="event.stopPropagation()">${folderIcon}</a>` : ''}</div><div class="cell-faint">${esc(c.ciRut)}</div></td>
+        <td>${regTag(c.regimen)}</td>
+        <td><span class="reg-tag"><span class="dot" style="background:${PRIORIDAD_COLOR[c.prioridad||'leve']}"></span>${PRIORIDAD_LABEL[c.prioridad||'leve']}</span></td>
+        <td>${esc(c.telefono)}</td>
+        <td class="num">${fmtMoneda(c.honorarioMensual, c.moneda)}</td>
+        <td>${peor ? chipVencimiento(peor.estado, peor.dias) : '<span class="chip chip--neutral">Sin obligaciones</span>'}</td>
+        <td><a class="btn btn-sm btn-wa" target="_blank" rel="noopener" href="${waLink(c.telefono, mensajeContextualCliente(c))}" onclick="event.stopPropagation()" title="Abre WhatsApp con un mensaje ya armado según el estado del cliente (vencimiento urgente, cobro pendiente, o saludo si está todo al día)">WhatsApp</a></td>
+      </tr>`;
+    }).join('') || `<tr><td colspan="7"><div class="empty-state">Sin resultados.</div></td></tr>`;
+
+    $$('#tbody-clientes tr[data-id]').forEach(tr => tr.addEventListener('click', () => abrirFichaCliente(tr.dataset.id)));
+  }
+
+  /* ---------------- render: obligaciones ---------------- */
+  let sortObligaciones = {key:null, dir:1};
+  function ordenarObligaciones(lista){
+    if(!sortObligaciones.key) return lista;
+    const dir = sortObligaciones.dir;
+    const cmp = {
+      organismo: (a,b) => a.organismo.localeCompare(b.organismo),
+      periodicidad: (a,b) => a.periodicidadDias - b.periodicidadDias
+    };
+    return lista.slice().sort((a,b) => dir * cmp[sortObligaciones.key](a,b));
+  }
+  function renderObligaciones(){
+    $('#tbody-obligaciones').innerHTML = ordenarObligaciones(OBLIGACIONES).map(o => `
+      <tr>
+        <td><div class="cell-name">${esc(o.nombre)}</div><div class="cell-faint">${esc(o.descripcion||'')}</div></td>
+        <td>${esc(o.organismo)}</td>
+        <td>${o.periodicidadDias}&nbsp;días</td>
+        <td class="cell-faint">${esc(o.ventana||'—')}</td>
+      </tr>`).join('');
+  }
+
+  /* ---------------- render: cobros ---------------- */
+  let filtroCobros = 'todos';
+  let sortCobros = {key:'mes', dir:-1};
+  const ORDEN_ESTADO_COBRO = { pendiente:0, parcial:1, cobrado:2 };
+  function ordenarCobros(lista){
+    const dir = sortCobros.dir;
+    const cmp = {
+      cliente: (a,b) => (clienteById(a.clienteId)?.nombre||'').localeCompare(clienteById(b.clienteId)?.nombre||''),
+      mes: (a,b) => a.mesCorrespondiente.localeCompare(b.mesCorrespondiente),
+      monto: (a,b) => montoEnUYU(a.monto,a.moneda) - montoEnUYU(b.monto,b.moneda),
+      pendiente: (a,b) => montoEnUYU(pendienteDe(a),a.moneda) - montoEnUYU(pendienteDe(b),b.moneda),
+      estado: (a,b) => ORDEN_ESTADO_COBRO[estadoCobro(a)] - ORDEN_ESTADO_COBRO[estadoCobro(b)]
+    };
+    return lista.slice().sort((a,b) => dir * cmp[sortCobros.key](a,b));
+  }
+  function renderCobros(){
+    let lista = COBROS.slice();
+    if(filtroCobros !== 'todos') lista = lista.filter(c => estadoCobro(c) === filtroCobros);
+    lista = ordenarCobros(lista);
+    $('#tbody-cobros').innerHTML = lista.map(c => {
+      const cli = clienteById(c.clienteId);
+      const pend = pendienteDe(c);
+      return `<tr>
+        <td class="cell-name">${esc(cli?cli.nombre:'—')}</td>
+        <td>${esc(c.concepto)}</td>
+        <td class="cell-faint">${fmtMes(c.mesCorrespondiente+'-01')}</td>
+        <td class="num">${fmtMoneda(c.monto, c.moneda)}</td>
+        <td class="num">${pend>0 ? fmtMoneda(pend, c.moneda) : '—'}</td>
+        <td>${chipCobro(estadoCobro(c))}</td>
+        <td><button class="btn btn-sm btn-outline" data-pago="${c.id}" ${pend<=0?'disabled':''}>Registrar pago</button></td>
+      </tr>`;
+    }).join('') || `<tr><td colspan="7"><div class="empty-state">No hay cobros en este filtro.</div></td></tr>`;
+
+    $$('#tbody-cobros [data-pago]').forEach(btn => btn.addEventListener('click', () => abrirModalPago(btn.dataset.pago)));
+  }
+
+  /* ---------------- navegación ---------------- */
+  function irA(view){
+    $$('.view').forEach(v => v.classList.toggle('active', v.dataset.view === view));
+    $$('#navrail button').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+    if(view==='panel') renderPanel();
+    if(view==='clientes') renderClientes();
+    if(view==='obligaciones') renderObligaciones();
+    if(view==='cobros') renderCobros();
+    if(view==='agenda') renderAgenda();
+  }
+  $$('#navrail button').forEach(b => b.addEventListener('click', () => irA(b.dataset.view)));
+
+  /* ---------------- modales genéricos ---------------- */
+  function abrirModal(id){ $('#'+id).classList.add('open'); }
+  function cerrarModal(id){ $('#'+id).classList.remove('open'); }
+  $$('.modal-overlay').forEach(ov => {
+    ov.addEventListener('click', e => { if(e.target === ov) cerrarModal(ov.id); });
+    $$('[data-close]', ov).forEach(b => b.addEventListener('click', () => cerrarModal(ov.id)));
+  });
+  document.addEventListener('keydown', e => { if(e.key==='Escape') $$('.modal-overlay.open').forEach(ov => cerrarModal(ov.id)); });
+
+  /* ---------------- ficha / alta de cliente ---------------- */
+  let clienteEnEdicion = null;
+
+  function abrirFichaCliente(id){
+    clienteEnEdicion = id;
+    const c = clienteById(id);
+    $('#mc-titulo').textContent = c.nombre;
+    $('#mc-sub').innerHTML = 'Cliente desde ' + fmtFecha(c.fechaAlta) + ` · Código del portal: <span class="mono" style="font-weight:600;">${esc(c.codigoAcceso)}</span>` + (c.driveUrl ? ` · <a class="folder-link" href="${esc(c.driveUrl)}" target="_blank" rel="noopener">${folderIcon}Carpeta digital</a>` : '');
+    $('#f-nombre').value = c.nombre;
+    $('#f-tipo').value = c.tipo;
+    $('#f-cirut').value = c.ciRut;
+    $('#f-regimen').value = c.regimen;
+    $('#f-tel').value = c.telefono;
+    $('#f-email').value = c.email;
+    $('#f-honorario').value = c.honorarioMensual;
+    $('#f-moneda').value = c.moneda;
+    $('#f-prioridad').value = c.prioridad || 'leve';
+    $('#f-drive').value = c.driveUrl || '';
+    $('#f-notas').value = c.notas;
+    $('#bloque-obligaciones').style.display = 'block';
+    renderObligCliente(c.id);
+    renderCobrosCliente(c.id);
+    $('#form-add-cobro').classList.remove('open');
+    $('#toggle-oblig-catalogo').classList.remove('open');
+    $('#body-oblig-catalogo').classList.remove('open');
+    abrirModal('modal-cliente');
+  }
+
+  function abrirNuevoCliente(){
+    clienteEnEdicion = null;
+    $('#mc-titulo').textContent = 'Nuevo cliente';
+    $('#mc-sub').textContent = '';
+    ['f-nombre','f-cirut','f-tel','f-email','f-notas','f-drive'].forEach(id => $('#'+id).value = '');
+    $('#f-tipo').value = 'fisica';
+    $('#f-regimen').value = 'literal_e';
+    $('#f-honorario').value = 10000;
+    $('#f-moneda').value = 'UYU';
+    $('#f-prioridad').value = 'leve';
+    $('#bloque-obligaciones').style.display = 'none';
+    abrirModal('modal-cliente');
+  }
+  $('#btn-nuevo-cliente').addEventListener('click', abrirNuevoCliente);
+
+  function renderObligCliente(clienteId){
+    renderObligAsignadas(clienteId);
+    renderObligCatalogoDisponible(clienteId);
+  }
+
+  function renderObligAsignadas(clienteId){
+    const activas = CLIENTE_OBLIG.filter(co => co.clienteId === clienteId && co.activa);
+    if(!activas.length){
+      $('#lista-oblig-cliente').innerHTML = `<div class="empty-state">Todavía no tiene obligaciones asignadas.</div>`;
+      return;
+    }
+    const filas = activas.map(co => {
+      const o = obligById(co.obligacionId);
+      const info = estadoVencimiento(co);
+      return `<div class="oblig-row">
+        <div class="oblig-main">
+          <div class="oblig-name">${esc(o.nombre)} ${info ? chipVencimiento(info.estado, info.dias) : ''}</div>
+          <div class="oblig-meta">${esc(o.organismo)} · cada ${o.periodicidadDias} días</div>
+          <input type="text" class="oblig-notas" data-notas="${co.id}" placeholder="Notas / documentación pendiente…" value="${esc(co.notas)}">
+        </div>
+        <div class="oblig-monto">
+          <span class="oblig-sub-label">Monto est.</span>
+          <input type="number" min="0" step="500" data-monto="${co.id}" value="${co.montoEstimado||''}" placeholder="—">
+        </div>
+        <div class="oblig-date">
+          <span class="oblig-sub-label">Último pago/presentación</span>
+          <input type="date" data-fecha="${co.id}" value="${co.ultimoCumplimiento||''}">
+          <button class="btn btn-ghost btn-sm" data-hoy="${co.id}" type="button">✓ Marcar pagado hoy</button>
+          ${info ? `<a class="btn btn-ghost btn-sm" target="_blank" rel="noopener" href="${calendarLink(`${o.nombre} — ${clienteById(clienteId).nombre}`, info.proximo, `Vencimiento de ${o.nombre} (${o.organismo}) para ${clienteById(clienteId).nombre}.`)}" title="Agendar recordatorio en tu Google Calendar">📅 Agendar</a>` : ''}
+        </div>
+        <button class="comp-remove" data-quitar="${co.id}" type="button" title="Quitar de asignadas">✕</button>
+      </div>`;
+    }).join('');
+    $('#lista-oblig-cliente').innerHTML = filas;
+
+    $$('#lista-oblig-cliente [data-fecha]').forEach(inp => inp.addEventListener('change', () => {
+      const co = CLIENTE_OBLIG.find(a => a.id === inp.dataset.fecha);
+      if(co){ co.ultimoCumplimiento = inp.value || null; persistAll(); renderObligAsignadas(clienteId); }
+    }));
+    $$('#lista-oblig-cliente [data-hoy]').forEach(btn => btn.addEventListener('click', () => {
+      const co = CLIENTE_OBLIG.find(a => a.id === btn.dataset.hoy);
+      if(co){ co.ultimoCumplimiento = hoyISO(); persistAll(); renderObligAsignadas(clienteId); }
+    }));
+    $$('#lista-oblig-cliente [data-notas]').forEach(inp => inp.addEventListener('change', () => {
+      const co = CLIENTE_OBLIG.find(a => a.id === inp.dataset.notas);
+      if(co){ co.notas = inp.value; persistAll(); }
+    }));
+    $$('#lista-oblig-cliente [data-monto]').forEach(inp => inp.addEventListener('change', () => {
+      const co = CLIENTE_OBLIG.find(a => a.id === inp.dataset.monto);
+      if(co){ co.montoEstimado = Number(inp.value)||0; persistAll(); }
+    }));
+    $$('#lista-oblig-cliente [data-quitar]').forEach(btn => btn.addEventListener('click', () => {
+      const co = CLIENTE_OBLIG.find(a => a.id === btn.dataset.quitar);
+      if(co){ co.activa = false; persistAll(); renderObligCliente(clienteId); }
+    }));
+  }
+
+  function renderObligCatalogoDisponible(clienteId){
+    const asignadasIds = new Set(CLIENTE_OBLIG.filter(co => co.clienteId===clienteId && co.activa).map(a => a.obligacionId));
+    const disponibles = OBLIGACIONES.filter(o => !asignadasIds.has(o.id));
+    $('#lista-oblig-catalogo').innerHTML = disponibles.length ? disponibles.map(o => `
+      <div class="oblig-row">
+        <input type="checkbox" data-asignar="${o.id}">
+        <div class="oblig-main">
+          <div class="oblig-name">${esc(o.nombre)}</div>
+          <div class="oblig-meta">${esc(o.organismo)} · cada ${o.periodicidadDias} días · ${esc(o.ventana||'')}</div>
+        </div>
+      </div>
+    `).join('') : `<div class="empty-state">Ya están todas las obligaciones del catálogo asignadas.</div>`;
+
+    $$('#lista-oblig-catalogo [data-asignar]').forEach(chk => chk.addEventListener('change', () => {
+      if(!chk.checked) return;
+      const obId = chk.dataset.asignar;
+      let co = CLIENTE_OBLIG.find(a => a.clienteId===clienteId && a.obligacionId===obId);
+      if(co){ co.activa = true; } else { co = {id:uid(), clienteId, obligacionId:obId, activa:true, ultimoCumplimiento:null, montoEstimado:0, notas:''}; CLIENTE_OBLIG.push(co); }
+      persistAll();
+      renderObligCliente(clienteId);
+    }));
+  }
+
+  $('#toggle-oblig-catalogo').addEventListener('click', () => {
+    $('#toggle-oblig-catalogo').classList.toggle('open');
+    $('#body-oblig-catalogo').classList.toggle('open');
+  });
+  $('#toggle-historial-cobros').addEventListener('click', () => {
+    $('#toggle-historial-cobros').classList.toggle('open');
+    $('#body-historial-cobros').classList.toggle('open');
+  });
+
+  function renderCobrosCliente(clienteId){
+    const propios = COBROS.filter(c => c.clienteId === clienteId).sort((a,b)=>b.mesCorrespondiente.localeCompare(a.mesCorrespondiente));
+    const cobradoTotal = propios.reduce((s,c) => s + c.pagos.reduce((s2,p)=>s2+p.monto,0), 0);
+    const moneda = clienteById(clienteId) ? clienteById(clienteId).moneda : 'UYU';
+    $('#resumen-historial-cobros').textContent = propios.length ? `${propios.length} cobro(s) registrado(s) · ${fmtMoneda(cobradoTotal, moneda)} cobrado en total` : 'Sin cobros registrados todavía';
+    $('#toggle-historial-cobros').classList.remove('open');
+    $('#body-historial-cobros').classList.remove('open');
+    $('#lista-cobros-cliente').innerHTML = propios.length ? propios.map(c => `
+      <div class="list-row">
+        <div class="list-main"><span class="list-title">${esc(c.concepto)}</span><span class="list-sub">${fmtMes(c.mesCorrespondiente+'-01')}</span></div>
+        <div class="list-side"><span class="mono">${fmtMoneda(c.monto, c.moneda)}</span>${chipCobro(estadoCobro(c))}</div>
+      </div>`).join('') : `<div class="empty-state">Sin cobros registrados todavía.</div>`;
+  }
+
+  $('#btn-guardar-cliente').addEventListener('click', () => {
+    const datos = {
+      nombre: $('#f-nombre').value.trim(),
+      tipo: $('#f-tipo').value,
+      ciRut: $('#f-cirut').value.trim(),
+      regimen: $('#f-regimen').value,
+      telefono: $('#f-tel').value.trim(),
+      email: $('#f-email').value.trim(),
+      honorarioMensual: Number($('#f-honorario').value) || 0,
+      moneda: $('#f-moneda').value,
+      prioridad: $('#f-prioridad').value,
+      driveUrl: $('#f-drive').value.trim(),
+      notas: $('#f-notas').value.trim()
+    };
+    if(!datos.nombre){ $('#f-nombre').focus(); return; }
+    if(clienteEnEdicion){
+      Object.assign(clienteById(clienteEnEdicion), datos);
+    } else {
+      const codigo = (datos.nombre.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z]/g,'').toUpperCase().slice(0,8) || 'CLIENTE') + '-' + Math.floor(100+Math.random()*900);
+      CLIENTES.push(Object.assign({id:uid(), fechaAlta:hoyISO(), activo:true, codigoAcceso:codigo}, datos));
+    }
+    persistAll();
+    cerrarModal('modal-cliente');
+    renderClientes();
+    if($('.view[data-view="panel"]').classList.contains('active')) renderPanel();
+  });
+
+  /* ---------------- cobro puntual (ad-hoc) desde la ficha ---------------- */
+  $('#toggle-add-cobro').addEventListener('click', () => {
+    const abierto = $('#form-add-cobro').classList.toggle('open');
+    if(abierto){ $('#fc-fecha').value = hoyISO(); $('#fc-moneda').value = clienteById(clienteEnEdicion) ? clienteById(clienteEnEdicion).moneda : 'UYU'; $('#fc-concepto').focus(); }
+  });
+  $('#btn-guardar-cobro-adhoc').addEventListener('click', () => {
+    if(!clienteEnEdicion) return;
+    const concepto = $('#fc-concepto').value.trim();
+    const monto = Number($('#fc-monto').value) || 0;
+    const fecha = $('#fc-fecha').value || hoyISO();
+    if(!concepto || monto <= 0){ $('#fc-concepto').focus(); return; }
+    COBROS.push({
+      id: uid(), clienteId: clienteEnEdicion, concepto, monto,
+      moneda: $('#fc-moneda').value, mesCorrespondiente: fecha.slice(0,7),
+      fechaGeneracion: fecha, pagos: [], notas: ''
+    });
+    persistAll();
+    ['fc-concepto','fc-monto'].forEach(id => $('#'+id).value = '');
+    $('#form-add-cobro').classList.remove('open');
+    renderCobrosCliente(clienteEnEdicion);
+    if($('.view[data-view="panel"]').classList.contains('active')) renderPanel();
+  });
+
+  /* ---------------- catálogo de obligaciones ---------------- */
+  $('#btn-nueva-obligacion').addEventListener('click', () => {
+    ['fo-nombre','fo-ventana','fo-descripcion'].forEach(id => $('#'+id).value = '');
+    $('#fo-organismo').value = 'DGI';
+    $('#fo-periodicidad').value = 30;
+    abrirModal('modal-obligacion');
+  });
+  $('#btn-guardar-obligacion').addEventListener('click', () => {
+    const nombre = $('#fo-nombre').value.trim();
+    if(!nombre){ $('#fo-nombre').focus(); return; }
+    OBLIGACIONES.push({
+      id: uid(), nombre,
+      organismo: $('#fo-organismo').value,
+      periodicidadDias: Number($('#fo-periodicidad').value) || 30,
+      ventana: $('#fo-ventana').value.trim(),
+      descripcion: $('#fo-descripcion').value.trim()
+    });
+    persistAll();
+    cerrarModal('modal-obligacion');
+    renderObligaciones();
+  });
+
+  /* ---------------- cobros / pagos ---------------- */
+  let cobroEnPago = null;
+  function abrirModalPago(cobroId){
+    cobroEnPago = cobroId;
+    const c = COBROS.find(x => x.id === cobroId);
+    const cli = clienteById(c.clienteId);
+    $('#mp-sub').textContent = `${cli.nombre} · ${c.concepto} · pendiente ${fmtMoneda(pendienteDe(c), c.moneda)}`;
+    $('#fp-monto').value = pendienteDe(c);
+    $('#fp-fecha').value = hoyISO();
+    $('#fp-metodo').value = 'Transferencia';
+    abrirModal('modal-pago');
+  }
+  function registrarPago(monto){
+    const c = COBROS.find(x => x.id === cobroEnPago);
+    if(!c || monto <= 0) return;
+    c.pagos.push({monto, fecha: $('#fp-fecha').value || hoyISO(), metodo: $('#fp-metodo').value});
+    persistAll();
+    cerrarModal('modal-pago');
+    renderCobros();
+    if($('.view[data-view="panel"]').classList.contains('active')) renderPanel();
+  }
+  $('#btn-guardar-pago').addEventListener('click', () => registrarPago(Number($('#fp-monto').value) || 0));
+  $('#btn-marcar-completo').addEventListener('click', () => {
+    const c = COBROS.find(x => x.id === cobroEnPago);
+    if(c) registrarPago(pendienteDe(c));
+  });
+
+  $$('#filtro-cobros button').forEach(b => b.addEventListener('click', () => {
+    filtroCobros = b.dataset.f;
+    $$('#filtro-cobros button').forEach(x => x.classList.toggle('active', x===b));
+    renderCobros();
+  }));
+
+  $$('#toggle-moneda-cobrado button').forEach(b => b.addEventListener('click', () => {
+    monedaChartCobrado = b.dataset.m;
+    $$('#toggle-moneda-cobrado button').forEach(x => x.classList.toggle('active', x===b));
+    renderChartCobrado();
+  }));
+
+  $('#buscar-cliente').addEventListener('input', renderClientes);
+
+  /* ---------------- facturar honorarios del mes (con vista previa) ---------------- */
+  function clientesSinFacturarEsteMes(){
+    const mesActual = hoyISO().slice(0,7);
+    return CLIENTES.filter(c=>c.activo).filter(c => !COBROS.some(co => co.clienteId===c.id && co.mesCorrespondiente===mesActual));
+  }
+  function clientesYaFacturadosEsteMes(){
+    const mesActual = hoyISO().slice(0,7);
+    return CLIENTES.filter(c=>c.activo).filter(c => COBROS.some(co => co.clienteId===c.id && co.mesCorrespondiente===mesActual));
+  }
+
+  $('#btn-generar-honorarios').addEventListener('click', () => {
+    const pendientes = clientesSinFacturarEsteMes();
+    const yaFacturados = clientesYaFacturadosEsteMes();
+    $('#lista-preview-honorarios').innerHTML = (pendientes.length ? pendientes.map(c => `
+      <div class="list-row">
+        <div class="list-main"><span class="list-title">${esc(c.nombre)}</span><span class="list-sub">${REGIMEN_LABEL[c.regimen]}</span></div>
+        <div class="list-side mono">${fmtMoneda(c.honorarioMensual, c.moneda)}</div>
+      </div>`).join('') : `<div class="empty-state">Ya está facturado el mes en curso para todos los clientes activos.</div>`)
+      + (yaFacturados.length ? `<div class="field-help" style="margin-top:10px;">Ya tenían el cobro de este mes generado, no se van a duplicar: ${yaFacturados.map(c=>esc(c.nombre)).join(', ')}.</div>` : '');
+    $('#btn-confirmar-honorarios').disabled = !pendientes.length;
+    abrirModal('modal-preview-honorarios');
+  });
+
+  $('#btn-confirmar-honorarios').addEventListener('click', () => {
+    const mesActual = hoyISO().slice(0,7);
+    const pendientes = clientesSinFacturarEsteMes();
+    pendientes.forEach(c => {
+      COBROS.push({id:uid(), clienteId:c.id, concepto:`Honorarios ${fmtMes(mesActual+'-01')}`, monto:c.honorarioMensual, moneda:c.moneda, mesCorrespondiente:mesActual, fechaGeneracion:hoyISO(), pagos:[], notas:''});
+    });
+    persistAll();
+    cerrarModal('modal-preview-honorarios');
+    renderPanel();
+  });
+
+  /* ---------------- agenda ---------------- */
+  let agendaYear = null, agendaMonth = null, agendaDiaSel = null;
+
+  function renderAgenda(){
+    const hoy = new Date();
+    if(agendaYear === null){ agendaYear = hoy.getFullYear(); agendaMonth = hoy.getMonth(); }
+    const primerDia = new Date(agendaYear, agendaMonth, 1);
+    const ultimoDia = new Date(agendaYear, agendaMonth+1, 0);
+    const startOffset = (primerDia.getDay()+6)%7;
+    const totalDias = ultimoDia.getDate();
+
+    const items = vencimientosActivos().filter(v => {
+      const d = new Date(v.proximo+'T00:00:00');
+      return d.getFullYear()===agendaYear && d.getMonth()===agendaMonth;
+    });
+    const porDia = {};
+    items.forEach(v => { const dia = +v.proximo.slice(8,10); (porDia[dia] = porDia[dia] || []).push(v); });
+
+    const tareasMes = TAREAS.filter(t => {
+      const d = new Date(t.fecha+'T00:00:00');
+      return d.getFullYear()===agendaYear && d.getMonth()===agendaMonth;
+    });
+    const tareasPorDia = {};
+    tareasMes.forEach(t => { const dia = +t.fecha.slice(8,10); (tareasPorDia[dia] = tareasPorDia[dia] || []).push(t); });
+
+    $('#agenda-mes-label').textContent = primerDia.toLocaleDateString('es-UY', {month:'long', year:'numeric'});
+
+    let celdas = '';
+    for(let i=0;i<startOffset;i++) celdas += `<div class="agenda-cell empty"></div>`;
+    const hoyISOStr = hoyISO();
+    for(let dia=1; dia<=totalDias; dia++){
+      const fechaCelda = `${agendaYear}-${String(agendaMonth+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+      const eventos = (porDia[dia]||[]).sort((a,b)=>a.dias-b.dias);
+      const tareasDia = tareasPorDia[dia] || [];
+      const tareasPendientes = tareasDia.filter(t=>!t.hecha).length;
+      const esHoy = fechaCelda === hoyISOStr;
+      celdas += `<div class="agenda-cell ${esHoy?'today':''} ${agendaDiaSel===dia?'selected':''}" data-dia="${dia}">
+        <div class="agenda-daynum-row">
+          <span class="agenda-daynum">${dia}</span>
+          ${tareasPendientes ? `<span class="agenda-tarea-badge">📝${tareasPendientes}</span>` : ''}
+        </div>
+        ${eventos.slice(0,3).map(v => `<span class="agenda-chip agenda-chip--${v.estado==='vencido'?'critical':v.estado==='proximo'?'warn':'good'}">${esc(v.cliente.nombre.split(' ')[0])}</span>`).join('')}
+        ${eventos.length>3 ? `<span class="agenda-more">+${eventos.length-3}</span>` : ''}
+      </div>`;
+    }
+    $('#agenda-grid').innerHTML = celdas;
+
+    $$('#agenda-grid .agenda-cell[data-dia]').forEach(cell => cell.addEventListener('click', () => abrirDiaAgenda(+cell.dataset.dia)));
+  }
+
+  function fechaAgendaISO(dia){ return `${agendaYear}-${String(agendaMonth+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`; }
+
+  function abrirDiaAgenda(dia){
+    agendaDiaSel = dia;
+    renderAgenda();
+    $('#mda-titulo').textContent = fmtFecha(fechaAgendaISO(dia));
+    poblarSelectClienteTarea();
+    $('#form-nueva-tarea').style.display = 'none';
+    pintarDetalleDiaAgenda();
+    abrirModal('modal-dia-agenda');
+  }
+
+  function poblarSelectClienteTarea(){
+    $('#mt-cliente').innerHTML = `<option value="">— Sin cliente —</option>` + CLIENTES.map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join('');
+  }
+
+  function pintarDetalleDiaAgenda(){
+    const fechaISO = fechaAgendaISO(agendaDiaSel);
+    const eventos = vencimientosActivos().filter(v => v.proximo === fechaISO).sort((a,b)=>a.dias-b.dias);
+    $('#mda-vencimientos').innerHTML = eventos.length ? eventos.map(v => `
+      <div class="list-row">
+        <div class="list-main"><span class="list-title">${esc(v.cliente.nombre)}</span><span class="list-sub">${esc(v.oblig.nombre)}</span></div>
+        <div class="list-side">${chipVencimiento(v.estado, v.dias)}<a class="btn btn-sm btn-outline" target="_blank" rel="noopener" href="${calendarLink(`${v.oblig.nombre} — ${v.cliente.nombre}`, v.proximo, `Vencimiento de ${v.oblig.nombre} (${v.oblig.organismo}) para ${v.cliente.nombre}.`)}" title="Agendar en Google Calendar">📅</a><a class="btn btn-sm btn-wa" target="_blank" rel="noopener" href="${waLink(v.cliente.telefono, `Hola ${v.cliente.nombre}! Te escribo para recordarte que ${v.dias<0?'venció':'se acerca el vencimiento de'} ${v.oblig.nombre} (${v.oblig.organismo}). Necesito la documentación para prepararlo a tiempo. ¡Gracias!`)}">WhatsApp</a></div>
+      </div>`).join('') : `<div class="empty-state">Sin vencimientos este día.</div>`;
+
+    const tareasDia = TAREAS.filter(t => t.fecha === fechaISO).sort((a,b)=>a.creada.localeCompare(b.creada));
+    $('#mda-tareas').innerHTML = tareasDia.length ? tareasDia.map(t => {
+      const cliente = t.clienteId ? clienteById(t.clienteId) : null;
+      return `<div class="list-row">
+        <div class="list-main">
+          <span class="list-title" style="${t.hecha?'text-decoration:line-through; color:var(--ink-faint);':''}">${esc(t.titulo)}</span>
+          <span class="list-sub">${cliente ? esc(cliente.nombre) : ''}${cliente && t.notas ? ' · ' : ''}${t.notas ? esc(t.notas) : ''}</span>
+        </div>
+        <div class="list-side">
+          <button type="button" class="btn btn-sm ${t.hecha?'btn-outline':'btn-primary'}" data-tarea-toggle="${t.id}">${t.hecha ? '↺ Reabrir' : '✓ Hecha'}</button>
+          <button type="button" class="btn btn-ghost btn-sm" data-tarea-borrar="${t.id}" title="Borrar tarea">✕</button>
+        </div>
+      </div>`;
+    }).join('') : `<div class="empty-state">Sin tareas este día.</div>`;
+
+    $$('#mda-tareas [data-tarea-toggle]').forEach(b => b.addEventListener('click', () => {
+      const t = TAREAS.find(x => x.id === b.dataset.tareaToggle);
+      if(t){ t.hecha = !t.hecha; persistAll(); pintarDetalleDiaAgenda(); renderAgenda(); }
+    }));
+    $$('#mda-tareas [data-tarea-borrar]').forEach(b => b.addEventListener('click', () => {
+      TAREAS = TAREAS.filter(x => x.id !== b.dataset.tareaBorrar);
+      persistAll(); pintarDetalleDiaAgenda(); renderAgenda();
+    }));
+  }
+
+  $('#toggle-nueva-tarea').addEventListener('click', () => {
+    $('#mt-titulo').value = ''; $('#mt-notas').value = ''; $('#mt-cliente').value = '';
+    $('#form-nueva-tarea').style.display = 'block';
+    $('#mt-titulo').focus();
+  });
+  $('#btn-cancelar-tarea').addEventListener('click', () => { $('#form-nueva-tarea').style.display = 'none'; });
+  $('#btn-guardar-tarea').addEventListener('click', () => {
+    const titulo = $('#mt-titulo').value.trim();
+    if(!titulo){ $('#mt-titulo').focus(); return; }
+    TAREAS.push({id:uid(), fecha:fechaAgendaISO(agendaDiaSel), titulo, notas:$('#mt-notas').value.trim(), clienteId:$('#mt-cliente').value||null, hecha:false, creada:hoyISO()});
+    persistAll();
+    $('#form-nueva-tarea').style.display = 'none';
+    pintarDetalleDiaAgenda();
+    renderAgenda();
+  });
+
+  $('#agenda-prev').addEventListener('click', () => {
+    agendaMonth--; if(agendaMonth<0){ agendaMonth=11; agendaYear--; }
+    agendaDiaSel = null;
+    renderAgenda();
+  });
+  $('#agenda-next').addEventListener('click', () => {
+    agendaMonth++; if(agendaMonth>11){ agendaMonth=0; agendaYear++; }
+    agendaDiaSel = null;
+    renderAgenda();
+  });
+
+  /* ---------------- portal del cliente (#portal) ---------------- */
+  function mostrarPortal(actualizarHistorial){
+    document.querySelector('.app').style.display = 'none';
+    document.getElementById('portal-shell').style.display = 'block';
+    if(actualizarHistorial !== false) history.pushState({crm:'portal'}, '', '#portal');
+  }
+  function mostrarAdmin(actualizarHistorial){
+    document.getElementById('portal-shell').style.display = 'none';
+    document.querySelector('.app').style.display = '';
+    $('#portal-dashboard').style.display = 'none';
+    $('#portal-login').style.display = 'block';
+    $('#portal-codigo').value = ''; $('#portal-error').style.display = 'none';
+    if(actualizarHistorial !== false) history.pushState({crm:'admin'}, '', location.pathname + location.search);
+  }
+  window.addEventListener('popstate', () => { if(location.hash === '#portal') mostrarPortal(false); else mostrarAdmin(false); });
+  $('#btn-portal-entrar').addEventListener('click', intentarIngresoPortal);
+  $('#portal-codigo').addEventListener('keydown', e => { if(e.key==='Enter') intentarIngresoPortal(); });
+
+  function intentarIngresoPortal(){
+    const codigo = $('#portal-codigo').value.trim().toUpperCase();
+    const cliente = CLIENTES.find(c => (c.codigoAcceso||'').toUpperCase() === codigo);
+    if(!cliente){ $('#portal-error').style.display = 'block'; return; }
+    $('#portal-error').style.display = 'none';
+    renderPortalDashboard(cliente);
+  }
+
+  function renderPortalDashboard(cliente){
+    $('#portal-login').style.display = 'none';
+    const dash = $('#portal-dashboard');
+    dash.style.display = 'block';
+
+    const vencs = vencimientosActivos().filter(v => v.cliente.id === cliente.id).sort((a,b)=>a.dias-b.dias);
+    const cobrosCliente = COBROS.filter(c => c.clienteId === cliente.id).sort((a,b)=>b.mesCorrespondiente.localeCompare(a.mesCorrespondiente));
+    const pendienteTotal = cobrosCliente.reduce((s,c) => s + pendienteDe(c), 0);
+    const proximoVenc = vencs.find(v => v.estado !== 'aldia');
+
+    dash.innerHTML = `
+      <div class="portal-header">
+        <div>
+          <h1>${esc(cliente.nombre)}</h1>
+          <div class="field-help">${REGIMEN_LABEL[cliente.regimen]} · Portal de cliente</div>
+        </div>
+        <button class="btn btn-outline btn-sm" id="btn-portal-salir">Salir</button>
+      </div>
+
+      <div class="stat-row" style="grid-template-columns:1fr 1fr;">
+        <div class="stat-tile"><div class="stat-label">Tu saldo pendiente</div><div class="stat-value">${fmtMoneda(pendienteTotal, cliente.moneda)}</div><div class="stat-sub">con tu contador</div></div>
+        <div class="stat-tile"><div class="stat-label">Próximo vencimiento</div><div class="stat-value" style="font-size:15.5px; line-height:1.3;">${proximoVenc ? esc(proximoVenc.oblig.nombre) : 'Estás al día 🎉'}</div>${proximoVenc ? `<div class="stat-sub">${chipVencimiento(proximoVenc.estado, proximoVenc.dias)}</div>` : ''}</div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>Tus obligaciones</h2><span class="hint">${vencs.length} activa(s)</span></div>
+        <div>${vencs.length ? vencs.map(v => `
+          <div class="list-row"><div class="list-main"><span class="list-title">${esc(v.oblig.nombre)}</span><span class="list-sub">${esc(v.oblig.organismo)}</span></div><div class="list-side">${chipVencimiento(v.estado, v.dias)}</div></div>
+        `).join('') : `<div class="empty-state">No tenés obligaciones activas.</div>`}</div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>Historial con tu contador</h2></div>
+        <div>${cobrosCliente.length ? cobrosCliente.map(c => `
+          <div class="list-row"><div class="list-main"><span class="list-title">${esc(c.concepto)}</span><span class="list-sub">${fmtMes(c.mesCorrespondiente+'-01')}</span></div><div class="list-side"><span class="mono">${fmtMoneda(c.monto, c.moneda)}</span>${chipCobro(estadoCobro(c))}</div></div>
+        `).join('') : `<div class="empty-state">Sin cobros registrados todavía.</div>`}</div>
+      </div>
+
+      ${cliente.driveUrl ? `<div class="panel"><div class="panel-head"><h2>Carpeta digital</h2></div><a class="folder-link" href="${esc(cliente.driveUrl)}" target="_blank" rel="noopener" style="font-size:13px;">${folderIcon}Abrir carpeta compartida</a></div>` : ''}
+    `;
+
+    $('#btn-portal-salir').addEventListener('click', () => {
+      dash.style.display = 'none';
+      $('#portal-login').style.display = 'block';
+      $('#portal-codigo').value = '';
+    });
+  }
+
+  /* ---------------- init ---------------- */
+  wireSortable('thead-clientes', sortClientes, renderClientes);
+  wireSortable('thead-cobros', sortCobros, renderCobros);
+  wireSortable('thead-obligaciones', sortObligaciones, renderObligaciones);
+  actualizarBotonTema();
+  $$('.btn-tema').forEach(b => b.addEventListener('click', () => aplicarTema(temaActual() === 'dark' ? 'light' : 'dark')));
+  $('#btn-ir-portal').addEventListener('click', () => mostrarPortal());
+  $('#btn-ir-admin').addEventListener('click', () => mostrarAdmin());
+  if(location.hash === '#portal'){
+    mostrarPortal(false);
+  } else {
+    renderPanel();
+  }
+})();
+</script>
+</body>
+</html>

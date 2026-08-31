@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<title>Libro Mayor — CRM Contable</title>
+<style>
+  :root{
+    --paper:#F4F7F3;
+    --surface:#FFFFFF;
+    --surface-2:#EDF2EC;
+    --line:#D7E1D6;
+    --line-strong:#C3D1C1;
+    --ink:#1B2624;
+    --ink-soft:#55655F;
+    --ink-faint:#8A9891;
+    --accent:#2A4B7C;
+    --accent-ink:#FFFFFF;
+    --accent-soft:#E4EBF3;
+    --good:#2E7D46;
+    --good-bg:#E4F1E7;
+    --warn:#B8600F;
+    --warn-bg:#FBEADA;
+    --muted-bg:#E9EDE8;
+    --org-b:#1E8A72;
+    --shadow:0 1px 2px rgba(27,38,36,.06), 0 18px 40px -20px rgba(27,38,36,.28);
+    --shadow-lift:0 2px 4px rgba(27,38,36,.08), 0 30px 60px -24px rgba(27,38,36,.34);
+    --font-display:'Newsreader', Georgia, 'Times New Roman', serif;
+    --font-body:'IBM Plex Sans', -apple-system, Segoe UI, sans-serif;
+    --font-mono:'IBM Plex Mono', 'SF Mono', Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#12181A;
+      --surface:#182022;
+      --surface-2:#1D2628;
+      --line:#2A3A38;
+      --line-strong:#38504C;
+      --ink:#E7EFE9;
+      --ink-soft:#A9BAB2;
+      --ink-faint:#6E8079;
+      --accent:#8FADE0;
+      --accent-ink:#0F1720;
+      --accent-soft:#233450;
+      --good:#4CAF6B;
+      --good-bg:#163722;
+      --warn:#D97F2E;
+      --warn-bg:#3A2712;
+      --muted-bg:#202A2B;
+      --org-b:#3DA285;
+      --shadow:0 1px 2px rgba(0,0,0,.35), 0 18px 40px -20px rgba(0,0,0,.6);
+      --shadow-lift:0 2px 4px rgba(0,0,0,.4), 0 30px 60px -24px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#12181A;
+    --surface:#182022;
+    --surface-2:#1D2628;
+    --line:#2A3A38;
+    --line-strong:#38504C;
+    --ink:#E7EFE9;
+    --ink-soft:#A9BAB2;
+    --ink-faint:#6E8079;
+    --accent:#8FADE0;
+    --accent-ink:#0F1720;
+    --accent-soft:#233450;
+    --good:#4CAF6B;
+    --good-bg:#163722;
+    --warn:#D97F2E;
+    --warn-bg:#3A2712;
+    --muted-bg:#202A2B;
+    --org-b:#3DA285;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 18px 40px -20px rgba(0,0,0,.6);
+    --shadow-lift:0 2px 4px rgba(0,0,0,.4), 0 30px 60px -24px rgba(0,0,0,.7);
+  }
+
+  *,*::before,*::after{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--font-body);
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:var(--font-display);font-weight:600;margin:0;text-wrap:balance;color:var(--ink);}
+  em{font-style:italic;color:var(--accent);}
+  .mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums;}
+
+  /* ---------- deck shell ---------- */
+  #deck{
+    position:relative;
+    width:100%;
+    height:100vh;
+    background-color:var(--paper);
+    background-image:
+      radial-gradient(ellipse 55% 45% at 90% 6%, var(--accent-soft) 0%, transparent 68%),
+      radial-gradient(circle at 1px 1px, var(--line) 1.1px, transparent 0);
+    background-size:auto, 26px 26px;
+    background-repeat:no-repeat, repeat;
+  }
+  .slide{
+    position:absolute;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    padding:clamp(20px,4vw,56px) clamp(24px,7vw,96px);
+    opacity:0;
+    transform:translateY(14px);
+    transition:opacity .5s ease, transform .5s ease;
+    pointer-events:none;
+    overflow-y:auto;
+  }
+  .slide.active{
+    opacity:1;
+    transform:translateY(0);
+    pointer-events:auto;
+  }
+  @media (prefers-reduced-motion:reduce){
+    .slide{transition:opacity .15s linear; transform:none;}
+  }
+
+  .ledger-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding-bottom:10px;
+    margin-bottom:clamp(18px,3.4vw,40px);
+    border-bottom:1px solid var(--line-strong);
+    flex-shrink:0;
+    gap:14px;
+  }
+  .brand-mini{display:flex; align-items:center; gap:8px; color:var(--accent);}
+  .brand-mini .logo-slot{width:20px; height:20px; flex-shrink:0; display:block;}
+  .brand-mini span{font-family:var(--font-mono); font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-faint);}
+  .ledger-right{display:flex; align-items:center; gap:16px;}
+  .ledger-right .doc-name{
+    font-family:var(--font-mono);
+    font-size:11px;
+    letter-spacing:.06em;
+    color:var(--ink-faint);
+  }
+  .ledger-right .folio{
+    font-family:var(--font-mono);
+    font-size:11px;
+    letter-spacing:.06em;
+    color:var(--ink-faint);
+  }
+
+  .slide-body{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    gap:clamp(14px,2.4vw,22px);
+    max-width:1120px;
+    margin:0 auto;
+    width:100%;
+  }
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:12px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--accent);
+  }
+  .slide h1{font-size:clamp(30px,4.6vw,54px); line-height:1.08;}
+  .slide h2{font-size:clamp(24px,3.4vw,38px); line-height:1.14;}
+  .lede{font-size:clamp(15px,1.7vw,19px); color:var(--ink-soft); max-width:62ch; line-height:1.55;}
+
+  /* ---------- reusable bits ---------- */
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:clamp(14px,2vw,26px);}
+  .grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:clamp(12px,1.6vw,20px);}
+  @media (max-width:760px){ .grid2,.grid3{grid-template-columns:1fr;} }
+
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:clamp(16px,2vw,26px);
+    box-shadow:var(--shadow);
+  }
+  .card h3{font-size:18px; margin-bottom:8px;}
+  .card p{margin:0; color:var(--ink-soft); font-size:14px; line-height:1.55;}
+  .card .tag{
+    display:inline-block;
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+    color:var(--accent);
+    margin-bottom:10px;
+  }
+
+  .bullet-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:12px;}
+  .bullet-list li{
+    display:flex;
+    gap:14px;
+    align-items:baseline;
+    font-size:clamp(14.5px,1.5vw,17px);
+    color:var(--ink);
+    line-height:1.5;
+  }
+  .bullet-list li::before{
+    content:'—';
+    color:var(--accent);
+    flex-shrink:0;
+    font-family:var(--font-mono);
+  }
+  .bullet-list b{font-weight:600;}
+  .bullet-list .muted{color:var(--ink-soft); font-weight:400;}
+
+  .pill{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    padding:4px 10px;
+    border-radius:99px;
+    width:fit-content;
+  }
+  .pill.on{background:var(--good-bg); color:var(--good);}
+  .pill.dev{background:var(--warn-bg); color:var(--warn);}
+  .pill.next{background:var(--muted-bg); color:var(--ink-faint);}
+  .pill::before{content:''; width:6px; height:6px; border-radius:50%; background:currentColor;}
+
+  /* ---------- cover: hero + 3D stack ---------- */
+  .cover{justify-content:center;}
+  .cover .slide-body{max-width:1220px;}
+  .cover-layout{display:grid; grid-template-columns:1.1fr .9fr; align-items:center; gap:clamp(20px,4vw,60px);}
+  @media (max-width:900px){ .cover-layout{grid-template-columns:1fr;} }
+  .cover .mark{display:flex; align-items:center; gap:10px; margin-bottom:22px;}
+  .cover .mark .logo-slot{width:34px; height:34px;}
+  .cover .mark span{font-family:var(--font-mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-faint);}
+  .cover h1{font-size:clamp(42px,6.4vw,78px); line-height:1.0;}
+  .cover .sub{font-size:clamp(16px,2vw,20px); color:var(--ink-soft); max-width:46ch; margin-top:18px; line-height:1.5;}
+  .cover .stamp{margin-top:clamp(26px,4vw,44px); display:flex; gap:26px; flex-wrap:wrap;}
+  .cover .stamp div{font-family:var(--font-mono); font-size:11px; color:var(--ink-faint);}
+  .cover .stamp b{display:block; color:var(--ink); font-size:12.5px; margin-top:3px; font-weight:600;}
+
+  .stage-wrap{perspective:1500px; display:flex; align-items:center; justify-content:center; min-height:280px;}
+  .stage{position:relative; width:clamp(200px,22vw,280px); height:clamp(200px,22vw,280px); transform-style:preserve-3d; transition:transform .12s ease-out; will-change:transform;}
+  .stack-card{
+    position:absolute; left:6%; right:6%; top:22%; height:52%;
+    background:var(--surface); border:1px solid var(--line); border-radius:9px;
+    box-shadow:var(--shadow-lift); padding:16px 18px;
+    display:flex; flex-direction:column; justify-content:space-between;
+    backface-visibility:hidden;
+  }
+  .stack-card .sc-name{font-family:var(--font-display); font-weight:600; font-size:16px;}
+  .stack-card .sc-sub{font-family:var(--font-mono); font-size:9.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-faint); margin-top:2px;}
+  .card-c{transform:translateZ(-46px) translateY(20px) rotate(-2deg); z-index:1; opacity:.82;}
+  .card-b{transform:translateZ(0px) translateY(-2px) rotate(2.5deg); z-index:2; opacity:.94;}
+  .card-a{transform:translateZ(48px) translateY(-24px) rotate(-3.5deg); z-index:3;}
+  @media (prefers-reduced-motion:reduce){ .stage{transition:none;} }
+
+  /* stat + dashboard mock */
+  .stat-row{display:grid; grid-template-columns:repeat(4,1fr); gap:12px;}
+  @media (max-width:760px){ .stat-row{grid-template-columns:repeat(2,1fr);} }
+  .stat-tile{background:var(--surface); border:1px solid var(--line); border-radius:4px; padding:16px; box-shadow:var(--shadow);}
+  .stat-tile .label{font-size:11px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.05em; font-family:var(--font-mono);}
+  .stat-tile .value{font-family:var(--font-mono); font-size:24px; font-weight:600; margin-top:6px;}
+  .stat-tile .value.good{color:var(--good);}
+  .stat-tile .value.warn{color:var(--warn);}
+  .illustrative{font-size:10.5px; color:var(--ink-faint); font-style:italic;}
+
+  .dash-grid{display:grid; grid-template-columns:1.1fr .9fr; gap:12px;}
+  @media (max-width:760px){ .dash-grid{grid-template-columns:1fr;} }
+  .dash-panel{background:var(--surface); border:1px solid var(--line); border-radius:4px; padding:16px 18px; box-shadow:var(--shadow);}
+  .dash-panel h4{margin:0 0 12px; font-family:var(--font-mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-faint); font-weight:500;}
+  .bar-row{display:flex; align-items:center; gap:10px; margin-bottom:10px;}
+  .bar-row:last-child{margin-bottom:0;}
+  .bar-label{width:44px; flex-shrink:0; font-size:12px; color:var(--ink-soft);}
+  .bar-track{flex:1; height:8px; background:var(--surface-2); border-radius:99px; overflow:hidden;}
+  .bar-fill{height:100%; border-radius:99px;}
+  .bar-val{width:20px; text-align:right; font-size:12px; color:var(--ink-faint); flex-shrink:0;}
+  .due-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:9px;}
+  .due-list li{display:flex; align-items:center; gap:9px; font-size:12.5px; color:var(--ink);}
+  .due-dot{width:7px; height:7px; border-radius:50%; flex-shrink:0;}
+  .due-dot.warn{background:var(--warn);}
+  .due-dot.good{background:var(--good);}
+  .due-dot.accent{background:var(--accent);}
+  .due-list .who{flex:1; color:var(--ink-soft);}
+  .due-list .when{font-family:var(--font-mono); font-size:11px; color:var(--ink-faint); flex-shrink:0;}
+
+  /* suite table slide */
+  .suite-table{width:100%; border-collapse:collapse;}
+  .suite-table th{
+    text-align:left; font-family:var(--font-mono); font-size:11px; text-transform:uppercase;
+    letter-spacing:.05em; color:var(--ink-faint); font-weight:500; padding:0 14px 10px; border-bottom:1px solid var(--line-strong);
+  }
+  .suite-table td{padding:16px 14px; border-bottom:1px solid var(--line); vertical-align:top;}
+  .suite-table tr:last-child td{border-bottom:none;}
+  .suite-table .prod{font-family:var(--font-display); font-size:19px; font-weight:600;}
+  .suite-table .desc{color:var(--ink-soft); font-size:13.5px; max-width:34ch; line-height:1.5;}
+
+  /* closing */
+  .closing{align-items:center; text-align:center; justify-content:center;}
+  .closing .slide-body{align-items:center; text-align:center;}
+  .closing h1{font-size:clamp(34px,5.4vw,58px);}
+  .cta-row{display:flex; flex-direction:column; align-items:center; gap:10px; margin-top:6px;}
+  .cta{
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    font-family:var(--font-mono);
+    font-size:13px;
+    letter-spacing:.04em;
+    color:var(--accent-ink);
+    background:var(--accent);
+    padding:14px 28px;
+    border-radius:3px;
+    text-decoration:none;
+    transition:transform .15s ease, box-shadow .15s ease;
+    box-shadow:var(--shadow);
+  }
+  .cta:hover{transform:translateY(-2px); box-shadow:var(--shadow-lift);}
+  .cta-note{font-size:11.5px; color:var(--ink-faint);}
+
+  /* ---------- nav chrome ---------- */
+  .nav-arrow{
+    position:fixed;
+    top:0; bottom:0;
+    width:min(9vw,90px);
+    display:flex;
+    align-items:center;
+    background:transparent;
+    border:none;
+    cursor:pointer;
+    color:var(--ink-soft);
+    z-index:20;
+    opacity:.55;
+    transition:opacity .2s ease, color .2s ease;
+  }
+  .nav-arrow:hover{opacity:1; color:var(--accent);}
+  .nav-arrow:focus-visible{opacity:1; outline:2px solid var(--accent); outline-offset:-4px;}
+  .nav-arrow.prev{left:0; justify-content:flex-start; padding-left:clamp(10px,2vw,26px);}
+  .nav-arrow.next{right:0; justify-content:flex-end; padding-right:clamp(10px,2vw,26px);}
+  .arrow-chip{
+    display:flex; align-items:center; justify-content:center;
+    width:44px; height:44px; border-radius:50%; flex-shrink:0;
+    background:var(--surface); border:1px solid var(--line); box-shadow:var(--shadow);
+  }
+  .nav-arrow svg{width:18px; height:18px;}
+  .nav-arrow[disabled]{opacity:0 !important; pointer-events:none;}
+
+  .progress-rail{position:fixed; left:0; right:0; bottom:0; height:2px; background:var(--line); z-index:20;}
+  .progress-fill{height:100%; background:var(--accent); transition:width .4s ease;}
+
+  .folio-counter{
+    position:fixed; right:clamp(16px,3vw,32px); bottom:16px;
+    font-family:var(--font-mono); font-size:11px; color:var(--ink-faint);
+    letter-spacing:.04em; z-index:20; background:var(--paper); padding:2px 6px;
+  }
+  .dots{position:fixed; left:clamp(16px,3vw,32px); bottom:14px; display:flex; gap:6px; z-index:20;}
+  .dots button{width:6px; height:6px; border-radius:50%; border:none; padding:0; background:var(--line-strong); cursor:pointer;}
+  .dots button.active{background:var(--accent); width:16px; border-radius:3px; transition:width .2s ease;}
+
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+</style>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,500;1,6..72,600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<template id="logoTpl">
+  <svg viewBox="0 0 48 48" role="img" aria-label="CRM Contable">
+    <circle cx="24" cy="24" r="21.5" fill="none" stroke="currentColor" stroke-width="1.3"/>
+    <circle cx="24" cy="24" r="16.5" fill="none" stroke="currentColor" stroke-width=".9"/>
+    <text x="24" y="30.5" text-anchor="middle" font-family="Newsreader, Georgia, serif" font-style="italic" font-weight="600" font-size="17" fill="currentColor">CC</text>
+  </svg>
+</template>
+
+<div id="deck">
+
+  <section class="slide cover active" data-title="Portada">
+    <div class="ledger-head">
+      <div class="brand-mini"><span class="logo-slot"></span><span>CRM Contable</span></div>
+      <div class="ledger-right"><span class="folio mono">Fs. 01 / 10</span></div>
+    </div>
+    <div class="slide-body">
+      <div class="cover-layout">
+        <div>
+          <div class="mark"><span class="logo-slot"></span><span>Presentación comercial</span></div>
+          <h1>CRM Contable</h1>
+          <p class="sub">El sistema que ordena la cartera de clientes, los vencimientos de DGI y BPS, y el cobro de honorarios de tu estudio — todo en un solo lugar, sin depender de una planilla más.</p>
+          <div class="stamp">
+            <div>Para<b>Estudios contables independientes</b></div>
+            <div>Cubre<b>Cartera · Vencimientos · Cobros · Seguimiento</b></div>
+            <div>Estado<b>En uso, con dos productos más en camino</b></div>
+          </div>
+        </div>
+        <div class="stage-wrap">
+          <div class="stage" id="stage">
+            <div class="stack-card card-c"><div><div class="sc-name">SueldoNET</div><div class="sc-sub">Recibos de sueldo</div></div><span class="pill next">Próximamente</span></div>
+            <div class="stack-card card-b"><div><div class="sc-name">Minutario Contable</div><div class="sc-sub">Generador de documentos</div></div><span class="pill dev">En desarrollo</span></div>
+            <div class="stack-card card-a"><div><div class="sc-name">CRM Contable</div><div class="sc-sub">Cartera y cobros</div></div><span class="pill on">Disponible</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-title="El problema">
+    <div class="ledger-head">
+      <div class="brand-mini"><span class="logo-slot"></span><span>CRM Contable</span></div>
+      <div class="ledger-right"><span class="doc-name">El punto de partida</span><span class="folio mono">Fs. 02</span></div>
+    </div>
+    <div class="slide-body">
+      <span class="eyebrow">Hoy</span>
+      <h2>La cartera vive repartida entre la memoria, el Excel y el WhatsApp</h2>
+      <ul class="bullet-list">
+        <li><b>Los vencimientos de DGI y BPS de cada cliente</b> <span class="muted">se recuerdan de memoria o se anotan en planillas sueltas que nadie más consulta.</span></li>
+        <li><b>Los honorarios se facturan cuando alguien se acuerda</b> <span class="muted">— no hay un lugar único que diga quién pagó, quién debe y cuánto.</span></li>
+        <li><b>Los comprobantes de los clientes llegan por cualquier canal</b> <span class="muted">— mail, WhatsApp, papel — y se pierden minutos (o clientes) buscándolos.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="slide" data-title="La solución">
+    <div class="ledger-head">
+      <div class="brand-mini"><span class="logo-slot"></span><span>CRM Contable</span></div>
+      <div class="ledger-right"><span class="doc-name">La solución</span><span class="folio mono">Fs. 03</span></div>
+    </div>
+    <div class="slide-body">
+      <span class="eyebrow">CRM Contable</span>
+      <h2>Un solo libro para la cartera, los vencimientos y el cobro</h2>
+      <p class="lede">Ya construido, probado y en uso. Reemplaza la planilla dispersa por un sistema donde cada cliente tiene su régimen fiscal, sus obligaciones, su historial de pagos y su carpeta digital — todo a un clic.</p>
+      <div class="grid3">
+        <div class="card"><span class="tag">Ordena</span><h3>Cartera de clientes</h3><p>Régimen fiscal, prioridad de seguimiento y carpeta digital, en una ficha por cliente.</p></div>
+        <div class="card"><span class="tag">Avisa</span><h3>Vencimientos</h3><p>Semáforo de fechas límite por obligación, para no descubrirlas el día anterior.</p></div>
+        <div class="card"><span class="tag">Cobra</span><h3>Honorarios</h3><p>Recurrentes mensuales y cobros puntuales, sin mezclar pesos y dólares.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-title="Beneficios — adentro del estudio">
+    <div class="ledger-head">
+      <div class="brand-mini"><span class="logo-slot"></span><span>CRM Contable</span></div>
+      <div class="ledger-right"><span class="doc-name">Puertas adentro</span><span class="folio mono">Fs. 04</span></div>
+    </div>
+    <div class="slide-body">
+      <span class="eyebrow">Puertas adentro</span>
+      <h2>El tiempo, los datos y los plazos, bajo un mismo orden</h2>
+      <div class="grid2">
+        <div class="card">
+          <span class="tag">Vencimientos</span>
+          <h3>El tiempo, bajo control</h3>
+          <p>Cada obligación de DGI y BPS (13 tipos investigados) con su fecha, su semáforo y su monto estimado — para no descubrir un vencimiento el día anterior.</p>
+        </div>
+        <div class="card">
+          <span class="tag">Datos</span>
+          <h3>Sin los errores que arrastra el Excel</h3>
+          <p>Cada cliente y cada obligación en su lugar — sin fórmulas rotas, celdas borradas por accidente ni versiones distintas circulando por el estudio.</p>
+        </div>
+        <div class="card">
+          <span class="tag">Respaldo</span>
+          <h3>Carpeta digital, como respaldo del papel</h3>
+          <p>Cada cliente con su carpeta (Drive u OneDrive) enlazada — si el documento físico se pierde o se moja, la copia ya está a un clic.</p>
+        </div>
+        <div class="card">
+          <span class="tag">Prioridad</span>
+          <h3>Agenda ordenada por prioridad</h3>
+          <p>El calendario agrupa vencimientos y tareas propias por urgencia, para entregar el servicio en el orden que corresponde a cada cliente.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-title="Beneficios — hacia afuera">
+    <div class="ledger-head">
+      <div class="brand-mini"><span class="logo-slot"></span><span>CRM Contable</span></div>
+      <div class="ledger-right"><span class="doc-name">De cara al cliente</span><span class="folio mono">Fs. 05</span></div>
+    </div>
+    <div class="slide-body">
+      <span class="eyebrow">De cara al cliente</span>
+      <h2>Menos consultas al estudio, menos dependencia de una sola persona</h2>
+      <div class="grid3">
+        <div class="card">
+          <span class="tag">Aviso directo</span>
+          <h3>El mensaje ya viene armado</h3>
+          <p>Recordatorio de WhatsApp con el texto precargado — se envía al cliente sin redactar nada desde cero.</p>
+        </div>
+        <div class="card">
+          <span class="tag">Autogestión</span>
+          <h3>El cliente ve su propia contabilidad</h3>
+          <p>Un acceso de solo lectura para que cada cliente consulte su estado, sin una consulta al estudio que le quita tiempo de gestión al personal.</p>
+        </div>
+        <div class="card">
+          <span class="tag">Continuidad</span>
+          <h3>El conocimiento no depende de una persona</h3>
+          <p>Si alguien del equipo falta o se va, la cartera completa sigue disponible — no se pierde con la memoria de quien la llevaba.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-title="Panel">
+    <div class="ledger-head">
+      <div class="brand-mini"><span class="logo-slot"></span><span>CRM Contable</span></div>
+      <div class="ledger-right"><span class="doc-name">Módulo — Panel</span><span class="folio mono">Fs. 06</span></div>
+    </div>
+    <div class="slide-body">
+      <span class="eyebrow">De un vistazo</span>
+      <h2>El estado del estudio, al abrir el sistema</h2>
+      <div class="stat-row">
+        <div class="stat-tile"><div class="label">Vencimientos urgentes</div><div class="value warn">6</div></div>
+        <div class="stat-tile"><div class="label">Tareas pendientes</div><div class="value">4</div></div>
+        <div class="stat-tile"><div class="label">Cumplimiento del mes</div><div class="value good">92%</div></div>
+        <div class="stat-tile"><div class="label">Cobrado del mes</div><div class="value">$ 184.500</div></div>
+      </div>
+      <div class="dash-grid">
+        <div class="dash-panel">
+          <h4>Vencimientos por organismo</h4>
+          <div class="bar-row"><span class="bar-label">DGI</span><div class="bar-track"><div class="bar-fill" style="width:78%; background:var(--accent);"></div></div><span class="bar-val mono">9</span></div>
+          <div class="bar-row"><span class="bar-label">BPS</span><div class="bar-track"><div class="bar-fill" style="width:52%; background:var(--org-b);"></div></div><span class="bar-val mono">6</span></div>
+          <div class="bar-row"><span class="bar-label">Otros</span><div class="bar-track"><div class="bar-fill" style="width:24%; background:var(--warn);"></div></div><span class="bar-val mono">3</span></div>
+        </div>
+        <div class="dash-panel">
+          <h4>Próximos vencimientos</h4>
+          <ul class="due-list">
+            <li><span class="due-dot warn"></span><span class="who">IRPF — Estudio López</span><span class="when mono">3 sep</span></li>
+            <li><span class="due-dot accent"></span><span class="who">IVA — Panadería Sur</span><span class="when mono">5 sep</span></li>
+            <li><span class="due-dot good"></span><span class="who">BPS — Taller Rivas</span><span class="when mono">9 sep</span></li>
+          </ul>
+        </div>
+      </div>
+      <p class="illustrative">Panel ilustrativo — cifras de ejemplo, no datos reales de un estudio.</p>
+    </div>
+  </section>
+
+  <section class="slide" data-title="Minutario Contable">
+    <div class="ledger-head">
+      <div class="brand-mini"><span class="logo-slot"></span><span>CRM Contable</span></div>
+      <div class="ledger-right"><span class="doc-name">En desarrollo</span><span class="folio mono">Fs. 07</span></div>
+    </div>
+    <div class="slide-body">
+      <span class="pill dev">En desarrollo</span>
+      <h2>Minutario Contable — generador de documentos del estudio</h2>
+      <p class="lede">La segunda pieza de la suite: un catálogo de 20 documentos en 8 categorías (DGI, BPS, normativa laboral) para dejar de redactar cartas y certificados desde cero cada vez.</p>
+      <div class="grid2">
+        <div class="card">
+          <span class="tag">Ya disponibles</span>
+          <h3>Certificado de ingresos · Convenio de honorarios</h3>
+          <p>El convenio sigue el modelo oficial de la Guía Nº2 del CCEAU. El certificado de ingresos lee el comprobante que carga el estudio y extrae fecha, concepto, monto y moneda automáticamente.</p>
+        </div>
+        <div class="card">
+          <span class="tag">Motor real</span>
+          <h3>Lectura automática de comprobantes</h3>
+          <p>Backend propio que procesa la imagen del comprobante y completa los datos por IA — verificado con casos reales, no una simulación de interfaz.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-title="SueldoNET">
+    <div class="ledger-head">
+      <div class="brand-mini"><span class="logo-slot"></span><span>CRM Contable</span></div>
+      <div class="ledger-right"><span class="doc-name">Próximamente</span><span class="folio mono">Fs. 08</span></div>
+    </div>
+    <div class="slide-body">
+      <span class="pill next">Próximamente</span>
+      <h2>SueldoNET — portal de recibos de sueldo</h2>
+      <p class="lede">La tercera pieza: un portal para que los empleados de las empresas-cliente del estudio consulten su propio recibo, sin que el contador tenga que reenviarlo uno por uno.</p>
+      <div class="grid2">
+        <div class="card">
+          <span class="tag">Fase 1 — construida</span>
+          <h3>Consulta y aprobación de recibos</h3>
+          <p>El estudio carga el recibo ya calculado; el empleado ingresa con cédula y contraseña, lo revisa, lo aprueba (firma digital del recibido) y lo descarga o imprime.</p>
+        </div>
+        <div class="card">
+          <span class="tag">Fase 2 — en el mapa, sin empezar</span>
+          <h3>Cálculo real de la liquidación</h3>
+          <p>El paso siguiente: que el sistema ayude a calcular IRPF, BPS, licencias y laudos — no solo a mostrar un recibo ya resuelto por el estudio.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-title="La suite">
+    <div class="ledger-head">
+      <div class="brand-mini"><span class="logo-slot"></span><span>CRM Contable</span></div>
+      <div class="ledger-right"><span class="doc-name">Resumen de la suite</span><span class="folio mono">Fs. 09</span></div>
+    </div>
+    <div class="slide-body">
+      <span class="eyebrow">Tres productos, un mismo estudio</span>
+      <h2>Cada uno resuelve una parte distinta del trabajo diario</h2>
+      <table class="suite-table">
+        <thead><tr><th>Producto</th><th>Resuelve</th><th>Estado</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="prod">CRM Contable</td>
+            <td class="desc">Cartera, vencimientos de DGI/BPS y cobro de honorarios.</td>
+            <td><span class="pill on">Disponible</span></td>
+          </tr>
+          <tr>
+            <td class="prod">Minutario Contable</td>
+            <td class="desc">Generación de cartas, convenios y certificados del estudio.</td>
+            <td><span class="pill dev">En desarrollo</span></td>
+          </tr>
+          <tr>
+            <td class="prod">SueldoNET</td>
+            <td class="desc">Portal de recibos de sueldo para los empleados de tus clientes.</td>
+            <td><span class="pill next">Próximamente</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="slide closing" data-title="Cierre">
+    <div class="ledger-head">
+      <div class="brand-mini"><span class="logo-slot"></span><span>CRM Contable</span></div>
+      <div class="ledger-right"><span class="doc-name">Cierre</span><span class="folio mono">Fs. 10</span></div>
+    </div>
+    <div class="slide-body">
+      <h1>Empecemos por lo que ya está en uso</h1>
+      <div class="cta-row">
+        <a class="cta" href="app/" target="_blank" rel="noopener">Abrir el CRM Contable en vivo →</a>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<button class="nav-arrow prev" id="btnPrev" aria-label="Diapositiva anterior">
+  <span class="arrow-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 5l-7 7 7 7"/></svg></span>
+</button>
+<button class="nav-arrow next" id="btnNext" aria-label="Diapositiva siguiente">
+  <span class="arrow-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 5l7 7-7 7"/></svg></span>
+</button>
+<div class="progress-rail"><div class="progress-fill" id="progressFill"></div></div>
+<div class="dots" id="dots"></div>
+<div class="folio-counter" id="folioCounter"></div>
+
+<script>
+(function(){
+  var logoHTML = document.getElementById('logoTpl').innerHTML;
+  document.querySelectorAll('.logo-slot').forEach(function(el){ el.innerHTML = logoHTML; });
+
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var total = slides.length;
+  var current = 0;
+
+  var dotsWrap = document.getElementById('dots');
+  slides.forEach(function(_, i){
+    var b = document.createElement('button');
+    b.setAttribute('aria-label', 'Ir a diapositiva ' + (i+1));
+    b.addEventListener('click', function(){ go(i); });
+    dotsWrap.appendChild(b);
+  });
+  var dots = Array.prototype.slice.call(dotsWrap.children);
+
+  var btnPrev = document.getElementById('btnPrev');
+  var btnNext = document.getElementById('btnNext');
+  var progressFill = document.getElementById('progressFill');
+  var folioCounter = document.getElementById('folioCounter');
+
+  function render(){
+    slides.forEach(function(s, i){ s.classList.toggle('active', i === current); });
+    dots.forEach(function(d, i){ d.classList.toggle('active', i === current); });
+    progressFill.style.width = ((current + 1) / total * 100) + '%';
+    folioCounter.textContent = 'Fs. ' + String(current + 1).padStart(2,'0') + ' / ' + total;
+    btnPrev.disabled = current === 0;
+    btnNext.disabled = current === total - 1;
+    try { sessionStorage.setItem('crmcontable_slide', String(current)); } catch(e){}
+  }
+
+  function go(i){
+    current = Math.max(0, Math.min(total - 1, i));
+    render();
+  }
+
+  btnPrev.addEventListener('click', function(){ go(current - 1); });
+  btnNext.addEventListener('click', function(){ go(current + 1); });
+
+  document.addEventListener('keydown', function(e){
+    if (e.target && (e.target.tagName === 'A' || e.target.tagName === 'BUTTON') && e.key === ' ') return;
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown'){ e.preventDefault(); go(current + 1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp'){ e.preventDefault(); go(current - 1); }
+    else if (e.key === 'Home'){ go(0); }
+    else if (e.key === 'End'){ go(total - 1); }
+  });
+
+  var touchStartX = null;
+  document.getElementById('deck').addEventListener('touchstart', function(e){
+    touchStartX = e.touches[0].clientX;
+  }, {passive:true});
+  document.getElementById('deck').addEventListener('touchend', function(e){
+    if (touchStartX === null) return;
+    var dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) > 50){ go(dx < 0 ? current + 1 : current - 1); }
+    touchStartX = null;
+  }, {passive:true});
+
+  var restored = 0;
+  try {
+    var saved = parseInt(sessionStorage.getItem('crmcontable_slide'), 10);
+    if (!isNaN(saved) && saved >= 0 && saved < total) restored = saved;
+  } catch(e){}
+  current = restored;
+  render();
+
+  /* ---- 3D stack: mouse parallax + idle ambient drift ---- */
+  var stage = document.getElementById('stage');
+  if (stage){
+    var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var rx = 0, ry = 0, lastInput = 0;
+    function apply(x, y){
+      stage.style.transform = 'rotateX(' + x.toFixed(2) + 'deg) rotateY(' + y.toFixed(2) + 'deg)';
+    }
+    if (!reduceMotion){
+      var wrap = document.querySelector('.stage-wrap');
+      wrap.addEventListener('mousemove', function(e){
+        var r = wrap.getBoundingClientRect();
+        var px = (e.clientX - r.left) / r.width - 0.5;
+        var py = (e.clientY - r.top) / r.height - 0.5;
+        ry = px * 22;
+        rx = py * -18;
+        lastInput = performance.now();
+        apply(rx, ry);
+      });
+      wrap.addEventListener('mouseleave', function(){ lastInput = 0; });
+
+      var t0 = performance.now();
+      function drift(now){
+        if (now - lastInput > 1200){
+          var t = (now - t0) / 1000;
+          apply(Math.sin(t * 0.6) * 6, Math.cos(t * 0.45) * 9);
+        }
+        requestAnimationFrame(drift);
+      }
+      requestAnimationFrame(drift);
+    } else {
+      apply(0, 0);
+    }
+  }
+})();
+</script>
+</body>
+</html>
