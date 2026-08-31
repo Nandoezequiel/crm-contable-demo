@@ -271,7 +271,7 @@
 
   .add-inline{border:1px dashed var(--line); border-radius:8px; padding:10px 12px; margin-top:8px;}
   .add-inline-toggle{background:none; border:none; color:var(--accent); font-weight:600; font-size:12.5px; cursor:pointer; padding:2px 0;}
-  .add-inline-form{display:none; grid-template-columns:1.4fr .8fr .7fr 1fr auto; gap:8px; margin-top:10px; align-items:end;}
+  .add-inline-form{display:none; grid-template-columns:1.1fr .65fr .5fr .8fr .95fr auto; gap:8px; margin-top:10px; align-items:end;}
   .add-inline-form.open{display:grid;}
   .add-inline-form .field{margin-bottom:0;}
   .add-inline-form input, .add-inline-form select{padding:6px 8px; font-size:12.5px; border:1px solid var(--line); border-radius:6px; background:var(--surface); width:100%;}
@@ -321,6 +321,28 @@
   .portal-login .field{text-align:left;}
   .portal-header{display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:20px; gap:12px;}
   .portal-header h1{font-size:24px;}
+
+  /* ---------- cotización de referencia ---------- */
+  .tc-widget{display:flex; flex-direction:column; gap:3px; padding:8px 8px 6px; border:1px solid var(--line); border-radius:8px; margin-bottom:6px; background:var(--surface-2);}
+  .tc-widget .tc-row{display:flex; align-items:center; justify-content:space-between; gap:6px;}
+  .tc-widget .tc-label{font-size:10.5px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em; font-weight:600;}
+  .tc-edit{display:none; align-items:center; gap:4px;}
+  .tc-edit.open{display:flex;}
+  .tc-display{display:flex; align-items:center; gap:4px;}
+  .tc-edit input{width:64px; padding:4px 6px; border:1px solid var(--line); border-radius:6px; font-size:12px; background:var(--surface); color:var(--ink);}
+
+  /* ---------- estado de cuenta imprimible ---------- */
+  #imprimible{display:none;}
+  @media print{
+    body > *:not(#imprimible){display:none !important;}
+    #imprimible{display:block !important; background:#fff; color:#000; padding:24px; font-family:Arial, Helvetica, sans-serif;}
+    #imprimible h1{font-size:20px; margin:0 0 2px;}
+    #imprimible h2{font-size:14px; margin:18px 0 8px;}
+    #imprimible p{font-size:12.5px; color:#333; margin:0 0 16px;}
+    #imprimible table{width:100%; border-collapse:collapse; margin-bottom:20px;}
+    #imprimible th, #imprimible td{text-align:left; padding:6px 8px; border-bottom:1px solid #ccc; font-size:12px; color:#000;}
+    #imprimible th{font-size:10px; text-transform:uppercase; color:#555;}
+  }
 </style>
 
 <div class="app">
@@ -336,6 +358,21 @@
       <button data-view="agenda"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9.5h18"/><path d="M8 3v3M16 3v3"/></svg>Agenda</button>
     </nav>
     <div class="sidebar-foot" style="margin-top:auto; padding-top:12px; border-top:1px solid var(--line); display:flex; flex-direction:column; gap:6px;">
+      <div class="tc-widget" id="tc-widget" title="Cotización de referencia USD → UYU, para totales y comparaciones. La actualizás vos manualmente, no se descarga sola.">
+        <div class="tc-row">
+          <span class="tc-label">TC ref. USD</span>
+          <div class="tc-display" id="tc-display">
+            <span class="mono" id="tc-valor-txt"></span>
+            <button type="button" class="btn btn-ghost btn-sm" id="btn-abrir-editar-tc" style="padding:2px 4px;">✎</button>
+          </div>
+          <div class="tc-edit" id="tc-edit">
+            <span class="mono">$</span>
+            <input type="number" id="tc-input" min="1" step="0.01">
+            <button type="button" class="btn btn-ghost btn-sm" id="btn-guardar-tc" style="padding:2px 4px;">✓</button>
+          </div>
+        </div>
+        <span class="field-help" id="tc-fecha-txt"></span>
+      </div>
       <button type="button" id="btn-ir-portal" class="btn btn-outline btn-sm" style="width:100%; justify-content:center;">🔗 Portal del cliente</button>
       <button type="button" class="btn btn-outline btn-sm btn-tema" style="width:100%; justify-content:center;" title="Cambiar modo claro/oscuro"><span class="tema-icono">🌙</span>&nbsp;<span class="tema-label">Modo oscuro</span></button>
     </div>
@@ -407,6 +444,7 @@
           <p>Cartera de clientes del estudio.</p>
         </div>
         <div class="actions">
+          <button class="btn btn-outline" id="btn-exportar-clientes">⇩ Exportar Excel</button>
           <button class="btn btn-primary" id="btn-nuevo-cliente">+ Nuevo cliente</button>
         </div>
       </div>
@@ -455,6 +493,9 @@
           <h1>Cobros</h1>
           <p>Honorarios mensuales y cobros puntuales por cliente.</p>
         </div>
+        <div class="actions">
+          <button class="btn btn-outline" id="btn-exportar-cobros">⇩ Exportar Excel</button>
+        </div>
       </div>
       <div class="toolbar">
         <div class="filter-tabs" id="filtro-cobros">
@@ -463,6 +504,7 @@
           <button data-f="parcial">Parciales</button>
           <button data-f="cobrado">Cobrados</button>
         </div>
+        <select id="filtro-etiqueta" style="padding:7px 10px; border:1px solid var(--line); border-radius:8px; background:var(--surface); font-size:12.5px; color:var(--ink);"></select>
       </div>
       <div class="panel">
         <div class="table-wrap">
@@ -547,7 +589,10 @@
         <h2 id="mc-titulo">Nuevo cliente</h2>
         <div class="sub" id="mc-sub"></div>
       </div>
-      <button class="modal-close" data-close>&times;</button>
+      <div style="display:flex; align-items:flex-start; gap:6px;">
+        <button type="button" class="btn btn-outline btn-sm" id="btn-estado-cuenta" style="display:none;" title="Abre un documento imprimible con las obligaciones y el historial de cobros de este cliente">🖨️ Estado de cuenta</button>
+        <button class="modal-close" data-close>&times;</button>
+      </div>
     </div>
     <div class="modal-body">
       <div class="section-title">Datos</div>
@@ -606,8 +651,10 @@
             <div class="field"><label>Monto</label><input id="fc-monto" type="number" min="0" step="100"></div>
             <div class="field"><label>Moneda</label><select id="fc-moneda"><option value="UYU">UYU</option><option value="USD">USD</option></select></div>
             <div class="field"><label>Fecha</label><input id="fc-fecha" type="date"></div>
+            <div class="field"><label>Etiqueta (opcional)</label><input id="fc-etiqueta" type="text" list="lista-etiquetas" placeholder="Ej. Auditoría"></div>
             <button class="btn btn-primary btn-sm" id="btn-guardar-cobro-adhoc" type="button">Agregar</button>
           </div>
+          <datalist id="lista-etiquetas"></datalist>
         </div>
       </div>
     </div>
@@ -683,6 +730,8 @@
   </div>
 </div>
 
+<div id="imprimible"></div>
+
 <script>
 (function(){
   "use strict";
@@ -727,7 +776,26 @@
   const PRIORIDAD_LABEL = { leve:'Leve', moderada:'Moderada', urgente:'Urgente' };
   const PRIORIDAD_COLOR = { leve:'var(--good)', moderada:'var(--warn)', urgente:'var(--critical)' };
   const PRIORIDAD_ORDEN = { urgente:0, moderada:1, leve:2 };
-  function montoEnUYU(monto, moneda){ return moneda === 'USD' ? monto*40 : monto; }
+  function montoEnUYU(monto, moneda){ return moneda === 'USD' ? monto*TC.valor : monto; }
+
+  function renderTC(){
+    $('#tc-valor-txt').textContent = `$ ${TC.valor.toLocaleString('es-UY',{minimumFractionDigits:2, maximumFractionDigits:2})}`;
+    $('#tc-fecha-txt').textContent = `Actualizado ${fmtFecha(TC.fecha)}`;
+  }
+  function abrirEditorTC(){
+    $('#tc-input').value = TC.valor;
+    $('#tc-display').style.display = 'none';
+    $('#tc-edit').classList.add('open');
+    $('#tc-input').focus();
+  }
+  function guardarTC(){
+    const v = Number($('#tc-input').value);
+    if(v > 0){ TC = {valor:v, fecha:hoyISO()}; save(LS.tc, TC); }
+    $('#tc-edit').classList.remove('open');
+    $('#tc-display').style.display = 'flex';
+    renderTC();
+    if($('.view[data-view="panel"]').classList.contains('active')) renderPanel();
+  }
 
   /* ---------------- columnas ordenables ---------------- */
   function wireSortable(theadId, state, onChange){
@@ -769,8 +837,9 @@
     clientes: 'LM_CLIENTES_V4',
     obligaciones: 'LM_OBLIG_CATALOGO_V3',
     clienteOblig: 'LM_CLIENTE_OBLIG_V3',
-    cobros: 'LM_COBROS_V3',
-    tareas: 'LM_TAREAS_V1'
+    cobros: 'LM_COBROS_V4',
+    tareas: 'LM_TAREAS_V1',
+    tc: 'LM_TC_V1'
   };
   function load(key, fallback){
     try{ const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }catch(e){ return fallback; }
@@ -782,6 +851,9 @@
   let CLIENTE_OBLIG = load(LS.clienteOblig, null);
   let COBROS = load(LS.cobros, null);
   let TAREAS = load(LS.tareas, null);
+  let TC = load(LS.tc, null);
+
+  if(!TC){ TC = {valor:40, fecha:hoyISO()}; save(LS.tc, TC); }
 
   if(!OBLIGACIONES){
     OBLIGACIONES = [
@@ -903,11 +975,11 @@
             pagos = [];
           }
         }
-        seed.push({id:uid(), clienteId:c.id, concepto:`Honorarios ${fmtMes(mes+'-01')}`, monto:c.monto, moneda:c.moneda, mesCorrespondiente:mes, fechaGeneracion:generado, pagos, notas:''});
+        seed.push({id:uid(), clienteId:c.id, concepto:`Honorarios ${fmtMes(mes+'-01')}`, monto:c.monto, moneda:c.moneda, mesCorrespondiente:mes, fechaGeneracion:generado, pagos, notas:'', etiqueta:'Honorario fijo'});
       });
     });
     // trabajo puntual que hace subir un mes por encima del resto
-    seed.push({id:uid(), clienteId:'c1', concepto:'Informe de auditoría interna', monto:180000, moneda:'UYU', mesCorrespondiente:mesDe(-60), fechaGeneracion:A(-58), pagos:[{monto:180000, fecha:A(-50), metodo:'Transferencia'}], notas:''});
+    seed.push({id:uid(), clienteId:'c1', concepto:'Informe de auditoría interna', monto:180000, moneda:'UYU', mesCorrespondiente:mesDe(-60), fechaGeneracion:A(-58), pagos:[{monto:180000, fecha:A(-50), metodo:'Transferencia'}], notas:'', etiqueta:'Auditoría'});
     COBROS = seed;
     save(LS.cobros, COBROS);
   }
@@ -1193,7 +1265,7 @@
     const tareasUrgentes = tareasHoyOAtrasadas().length;
     const tareasProximas = tareasProximos7Dias().length;
 
-    const usdLine = (obj) => obj.USD > 0 ? `<div class="stat-sub mono">+ ${fmtMoneda(obj.USD,'USD')}</div>` : '';
+    const usdLine = (obj) => obj.USD > 0 ? `<div class="stat-sub mono">+ ${fmtMoneda(obj.USD,'USD')} <span style="color:var(--ink-faint); font-weight:400;">(≈ ${fmtMoneda(montoEnUYU(obj.USD,'USD'),'UYU')} al TC ref.)</span></div>` : '';
 
     $('#stat-row').innerHTML = `
       <div class="stat-tile"><div class="stat-label">Tus honorarios cobrados este mes</div><div class="stat-value">${fmtMoneda(cobradoMes.UYU,'UYU')}</div>${usdLine(cobradoMes)}<div class="stat-sub">pagos con fecha del mes en curso</div></div>
@@ -1291,6 +1363,7 @@
 
   /* ---------------- render: cobros ---------------- */
   let filtroCobros = 'todos';
+  let filtroEtiqueta = '';
   let sortCobros = {key:'mes', dir:-1};
   const ORDEN_ESTADO_COBRO = { pendiente:0, parcial:1, cobrado:2 };
   function ordenarCobros(lista){
@@ -1304,16 +1377,23 @@
     };
     return lista.slice().sort((a,b) => dir * cmp[sortCobros.key](a,b));
   }
+  function poblarFiltroEtiquetas(){
+    const unicas = Array.from(new Set(COBROS.map(c => c.etiqueta).filter(Boolean))).sort();
+    $('#filtro-etiqueta').innerHTML = `<option value="">Todas las etiquetas</option>` + unicas.map(e => `<option value="${esc(e)}">${esc(e)}</option>`).join('');
+    $('#filtro-etiqueta').value = filtroEtiqueta;
+  }
   function renderCobros(){
+    poblarFiltroEtiquetas();
     let lista = COBROS.slice();
     if(filtroCobros !== 'todos') lista = lista.filter(c => estadoCobro(c) === filtroCobros);
+    if(filtroEtiqueta) lista = lista.filter(c => c.etiqueta === filtroEtiqueta);
     lista = ordenarCobros(lista);
     $('#tbody-cobros').innerHTML = lista.map(c => {
       const cli = clienteById(c.clienteId);
       const pend = pendienteDe(c);
       return `<tr>
         <td class="cell-name">${esc(cli?cli.nombre:'—')}</td>
-        <td>${esc(c.concepto)}</td>
+        <td>${esc(c.concepto)}${c.etiqueta ? `<div style="margin-top:3px;"><span class="chip chip--neutral">${esc(c.etiqueta)}</span></div>` : ''}</td>
         <td class="cell-faint">${fmtMes(c.mesCorrespondiente+'-01')}</td>
         <td class="num">${fmtMoneda(c.monto, c.moneda)}</td>
         <td class="num">${pend>0 ? fmtMoneda(pend, c.moneda) : '—'}</td>
@@ -1354,6 +1434,7 @@
     const c = clienteById(id);
     $('#mc-titulo').textContent = c.nombre;
     $('#mc-sub').innerHTML = 'Cliente desde ' + fmtFecha(c.fechaAlta) + ` · Código del portal: <span class="mono" style="font-weight:600;">${esc(c.codigoAcceso)}</span>` + (c.driveUrl ? ` · <a class="folder-link" href="${esc(c.driveUrl)}" target="_blank" rel="noopener">${folderIcon}Carpeta digital</a>` : '');
+    $('#btn-estado-cuenta').style.display = 'inline-flex';
     $('#f-nombre').value = c.nombre;
     $('#f-tipo').value = c.tipo;
     $('#f-cirut').value = c.ciRut;
@@ -1378,6 +1459,7 @@
     clienteEnEdicion = null;
     $('#mc-titulo').textContent = 'Nuevo cliente';
     $('#mc-sub').textContent = '';
+    $('#btn-estado-cuenta').style.display = 'none';
     ['f-nombre','f-cirut','f-tel','f-email','f-notas','f-drive'].forEach(id => $('#'+id).value = '');
     $('#f-tipo').value = 'fisica';
     $('#f-regimen').value = 'literal_e';
@@ -1520,9 +1602,13 @@
   });
 
   /* ---------------- cobro puntual (ad-hoc) desde la ficha ---------------- */
+  function poblarListaEtiquetas(){
+    const unicas = Array.from(new Set(COBROS.map(c => c.etiqueta).filter(Boolean)));
+    $('#lista-etiquetas').innerHTML = unicas.map(e => `<option value="${esc(e)}"></option>`).join('');
+  }
   $('#toggle-add-cobro').addEventListener('click', () => {
     const abierto = $('#form-add-cobro').classList.toggle('open');
-    if(abierto){ $('#fc-fecha').value = hoyISO(); $('#fc-moneda').value = clienteById(clienteEnEdicion) ? clienteById(clienteEnEdicion).moneda : 'UYU'; $('#fc-concepto').focus(); }
+    if(abierto){ $('#fc-fecha').value = hoyISO(); $('#fc-moneda').value = clienteById(clienteEnEdicion) ? clienteById(clienteEnEdicion).moneda : 'UYU'; poblarListaEtiquetas(); $('#fc-concepto').focus(); }
   });
   $('#btn-guardar-cobro-adhoc').addEventListener('click', () => {
     if(!clienteEnEdicion) return;
@@ -1533,10 +1619,10 @@
     COBROS.push({
       id: uid(), clienteId: clienteEnEdicion, concepto, monto,
       moneda: $('#fc-moneda').value, mesCorrespondiente: fecha.slice(0,7),
-      fechaGeneracion: fecha, pagos: [], notas: ''
+      fechaGeneracion: fecha, pagos: [], notas: '', etiqueta: $('#fc-etiqueta').value.trim()
     });
     persistAll();
-    ['fc-concepto','fc-monto'].forEach(id => $('#'+id).value = '');
+    ['fc-concepto','fc-monto','fc-etiqueta'].forEach(id => $('#'+id).value = '');
     $('#form-add-cobro').classList.remove('open');
     renderCobrosCliente(clienteEnEdicion);
     if($('.view[data-view="panel"]').classList.contains('active')) renderPanel();
@@ -1596,6 +1682,7 @@
     $$('#filtro-cobros button').forEach(x => x.classList.toggle('active', x===b));
     renderCobros();
   }));
+  $('#filtro-etiqueta').addEventListener('change', () => { filtroEtiqueta = $('#filtro-etiqueta').value; renderCobros(); });
 
   $$('#toggle-moneda-cobrado button').forEach(b => b.addEventListener('click', () => {
     monedaChartCobrado = b.dataset.m;
@@ -1632,7 +1719,7 @@
     const mesActual = hoyISO().slice(0,7);
     const pendientes = clientesSinFacturarEsteMes();
     pendientes.forEach(c => {
-      COBROS.push({id:uid(), clienteId:c.id, concepto:`Honorarios ${fmtMes(mesActual+'-01')}`, monto:c.honorarioMensual, moneda:c.moneda, mesCorrespondiente:mesActual, fechaGeneracion:hoyISO(), pagos:[], notas:''});
+      COBROS.push({id:uid(), clienteId:c.id, concepto:`Honorarios ${fmtMes(mesActual+'-01')}`, monto:c.honorarioMensual, moneda:c.moneda, mesCorrespondiente:mesActual, fechaGeneracion:hoyISO(), pagos:[], notas:'', etiqueta:'Honorario fijo'});
     });
     persistAll();
     cerrarModal('modal-preview-honorarios');
@@ -1840,6 +1927,64 @@
     });
   }
 
+  /* ---------------- exportar a Excel (CSV) ---------------- */
+  function descargarCSV(nombreArchivo, filas){
+    const csv = filas.map(fila => fila.map(v => {
+      const s = String(v==null?'':v).replace(/"/g,'""');
+      return /[",;\n]/.test(s) ? `"${s}"` : s;
+    }).join(';')).join('\r\n');
+    const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = nombreArchivo;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+  $('#btn-exportar-clientes').addEventListener('click', () => {
+    const q = ($('#buscar-cliente').value||'').toLowerCase().trim();
+    const filtrados = ordenarClientes(CLIENTES.filter(c => !q || c.nombre.toLowerCase().includes(q) || c.ciRut.toLowerCase().includes(q)));
+    const filas = [['Cliente','CI/RUT','Régimen','Prioridad','Teléfono','Honorario','Moneda','Próximo vencimiento']];
+    filtrados.forEach(c => {
+      const peor = peorEstadoCliente(c.id);
+      filas.push([c.nombre, c.ciRut, REGIMEN_LABEL[c.regimen], PRIORIDAD_LABEL[c.prioridad||'leve'], c.telefono, c.honorarioMensual, c.moneda, peor ? fmtFecha(peor.proximo) : '—']);
+    });
+    descargarCSV(`cartera-clientes-${hoyISO()}.csv`, filas);
+  });
+  $('#btn-exportar-cobros').addEventListener('click', () => {
+    let lista = COBROS.slice();
+    if(filtroCobros !== 'todos') lista = lista.filter(c => estadoCobro(c) === filtroCobros);
+    if(filtroEtiqueta) lista = lista.filter(c => c.etiqueta === filtroEtiqueta);
+    lista = ordenarCobros(lista);
+    const filas = [['Cliente','Concepto','Etiqueta','Mes','Monto','Moneda','Pendiente','Estado']];
+    lista.forEach(c => {
+      const cli = clienteById(c.clienteId);
+      filas.push([cli?cli.nombre:'—', c.concepto, c.etiqueta||'', fmtMes(c.mesCorrespondiente+'-01'), c.monto, c.moneda, pendienteDe(c), {pendiente:'Pendiente',parcial:'Parcial',cobrado:'Cobrado'}[estadoCobro(c)]]);
+    });
+    descargarCSV(`cobros-${hoyISO()}.csv`, filas);
+  });
+
+  /* ---------------- estado de cuenta imprimible ---------------- */
+  function imprimirEstadoCuenta(clienteId){
+    const c = clienteById(clienteId);
+    if(!c) return;
+    const vencs = vencimientosActivos().filter(v => v.cliente.id === clienteId).sort((a,b)=>a.dias-b.dias);
+    const cobrosCliente = COBROS.filter(co => co.clienteId === clienteId).sort((a,b)=>b.mesCorrespondiente.localeCompare(a.mesCorrespondiente));
+    const pendienteTotal = cobrosCliente.reduce((s,co)=>s+pendienteDe(co),0);
+    const filasOblig = vencs.length ? vencs.map(v => `<tr><td>${esc(v.oblig.nombre)}</td><td>${esc(v.oblig.organismo)}</td><td>${v.estado==='vencido'?'Vencido':v.estado==='proximo'?'Próximo':'Al día'} (${fmtFecha(v.proximo)})</td></tr>`).join('') : `<tr><td colspan="3">Sin obligaciones activas.</td></tr>`;
+    const filasCobros = cobrosCliente.length ? cobrosCliente.map(co => `<tr><td>${esc(co.concepto)}</td><td>${fmtMes(co.mesCorrespondiente+'-01')}</td><td>${fmtMoneda(co.monto,co.moneda)}</td><td>${{pendiente:'Pendiente',parcial:'Parcial',cobrado:'Cobrado'}[estadoCobro(co)]}</td></tr>`).join('') : `<tr><td colspan="4">Sin cobros registrados.</td></tr>`;
+    $('#imprimible').innerHTML = `
+      <h1>Estado de cuenta</h1>
+      <p>${esc(c.nombre)} · ${esc(c.ciRut)} · Emitido el ${fmtFecha(hoyISO())}</p>
+      <h2>Obligaciones activas</h2>
+      <table><thead><tr><th>Obligación</th><th>Organismo</th><th>Estado</th></tr></thead><tbody>${filasOblig}</tbody></table>
+      <h2>Historial de honorarios y cobros</h2>
+      <table><thead><tr><th>Concepto</th><th>Mes</th><th>Monto</th><th>Estado</th></tr></thead><tbody>${filasCobros}</tbody></table>
+      <p><strong>Saldo pendiente: ${fmtMoneda(pendienteTotal, c.moneda)}</strong></p>
+    `;
+    window.print();
+  }
+  $('#btn-estado-cuenta').addEventListener('click', () => { if(clienteEnEdicion) imprimirEstadoCuenta(clienteEnEdicion); });
+
   /* ---------------- init ---------------- */
   wireSortable('thead-clientes', sortClientes, renderClientes);
   wireSortable('thead-cobros', sortCobros, renderCobros);
@@ -1848,6 +1993,10 @@
   $$('.btn-tema').forEach(b => b.addEventListener('click', () => aplicarTema(temaActual() === 'dark' ? 'light' : 'dark')));
   $('#btn-ir-portal').addEventListener('click', () => mostrarPortal());
   $('#btn-ir-admin').addEventListener('click', () => mostrarAdmin());
+  $('#btn-abrir-editar-tc').addEventListener('click', abrirEditorTC);
+  $('#btn-guardar-tc').addEventListener('click', guardarTC);
+  $('#tc-input').addEventListener('keydown', e => { if(e.key==='Enter') guardarTC(); });
+  renderTC();
   if(location.hash === '#portal'){
     mostrarPortal(false);
   } else {
