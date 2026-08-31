@@ -766,7 +766,7 @@
 
   /* ---------------- estado / persistencia ---------------- */
   const LS = {
-    clientes: 'LM_CLIENTES_V3',
+    clientes: 'LM_CLIENTES_V4',
     obligaciones: 'LM_OBLIG_CATALOGO_V3',
     clienteOblig: 'LM_CLIENTE_OBLIG_V3',
     cobros: 'LM_COBROS_V3',
@@ -805,8 +805,8 @@
   if(!CLIENTES){
     const A = (n) => addDaysISO(hoyISO(), n);
     CLIENTES = [
-      {id:'c1', nombre:'Constructora Delta SRL', tipo:'juridica', ciRut:'21.402.117.0011', telefono:'099452301', email:'admin@delta.com.uy', regimen:'irae_general', honorarioMensual:60000, moneda:'UYU', prioridad:'moderada', driveUrl:'', codigoAcceso:'DELTA-101', fechaAlta:A(-500), activo:true, notas:'Tiene 6 empleados en obra.'},
-      {id:'c2', nombre:'Ferretería Núñez Hnos.', tipo:'juridica', ciRut:'21.556.230.0018', telefono:'098771122', email:'nunezhnos@gmail.com', regimen:'iva_irae', honorarioMensual:32000, moneda:'UYU', prioridad:'leve', driveUrl:'https://drive.google.com/drive/folders/ejemplo-nunez', codigoAcceso:'NUNEZ-102', fechaAlta:A(-620), activo:true, notas:''},
+      {id:'c1', nombre:'Constructora Delta SRL', tipo:'juridica', ciRut:'21.402.117.0011', telefono:'099452301', email:'admin@delta.com.uy', regimen:'irae_general', honorarioMensual:60000, moneda:'UYU', prioridad:'moderada', driveUrl:'', codigoAcceso:'DELTA-101', fechaAlta:A(-500), activo:true, notas:'Tiene 6 empleados en obra.', ultimoContacto:A(-2)},
+      {id:'c2', nombre:'Ferretería Núñez Hnos.', tipo:'juridica', ciRut:'21.556.230.0018', telefono:'098771122', email:'nunezhnos@gmail.com', regimen:'iva_irae', honorarioMensual:32000, moneda:'UYU', prioridad:'leve', driveUrl:'https://drive.google.com/drive/folders/ejemplo-nunez', codigoAcceso:'NUNEZ-102', fechaAlta:A(-620), activo:true, notas:'', ultimoContacto:A(-25)},
       {id:'c3', nombre:'Panadería La Espiga SRL', tipo:'juridica', ciRut:'21.334.881.0014', telefono:'094112233', email:'', regimen:'iva_irae', honorarioMensual:28000, moneda:'UYU', prioridad:'leve', driveUrl:'', codigoAcceso:'ESPIGA-103', fechaAlta:A(-300), activo:true, notas:''},
       {id:'c4', nombre:'Lucía Ferreira — Diseño Gráfico', tipo:'fisica', ciRut:'4.556.213-4', telefono:'099887766', email:'lucia.dg@gmail.com', regimen:'literal_e', honorarioMensual:12000, moneda:'UYU', prioridad:'leve', driveUrl:'https://drive.google.com/drive/folders/ejemplo-lucia', codigoAcceso:'LUCIA-104', fechaAlta:A(-210), activo:true, notas:''},
       {id:'c5', nombre:'Rodrigo Batista — Consultor IT', tipo:'fisica', ciRut:'3.998.221-1', telefono:'091223344', email:'', regimen:'literal_e', honorarioMensual:400, moneda:'USD', prioridad:'urgente', driveUrl:'', codigoAcceso:'RODRIGO-105', fechaAlta:A(-150), activo:true, notas:'Factura en dólares a una empresa de Argentina.'},
@@ -927,6 +927,25 @@
 
   /* ---------------- cálculos de dominio ---------------- */
   function clienteById(id){ return CLIENTES.find(c => c.id === id); }
+
+  function fmtUltimoContacto(iso){
+    return iso ? `Último contacto ${fmtFecha(iso)}` : 'Sin contacto registrado';
+  }
+  function registrarContacto(clienteId){
+    const c = clienteById(clienteId);
+    if(!c) return;
+    c.ultimoContacto = hoyISO();
+    persistAll();
+    const vistaActiva = document.querySelector('.view.active');
+    const vista = vistaActiva ? vistaActiva.dataset.view : null;
+    if(vista === 'clientes') renderClientes();
+    else if(vista === 'panel') renderPanel();
+    else if(vista === 'agenda' && agendaDiaSel !== null) pintarDetalleDiaAgenda();
+  }
+  document.addEventListener('click', e => {
+    const a = e.target.closest('.btn-wa[data-wa-cliente]');
+    if(a) registrarContacto(a.dataset.waCliente);
+  }, true);
   function obligById(id){ return OBLIGACIONES.find(o => o.id === id); }
 
   function estadoVencimiento(co){
@@ -1194,7 +1213,7 @@
     $('#lista-vencimientos').innerHTML = top.length ? top.map(v => `
       <div class="list-row">
         <div class="list-main"><span class="list-title">${esc(v.cliente.nombre)}</span><span class="list-sub">${esc(v.oblig.nombre)}</span></div>
-        <div class="list-side">${chipVencimiento(v.estado, v.dias)}<a class="btn btn-sm btn-outline" target="_blank" rel="noopener" href="${calendarLink(`${v.oblig.nombre} — ${v.cliente.nombre}`, v.proximo, `Vencimiento de ${v.oblig.nombre} (${v.oblig.organismo}) para ${v.cliente.nombre}.`)}" title="Agendar recordatorio en tu Google Calendar">📅</a><a class="btn btn-sm btn-wa" target="_blank" rel="noopener" href="${waLink(v.cliente.telefono, `Hola ${v.cliente.nombre}! Te escribo para recordarte que ${v.dias<0?'venció':'se acerca el vencimiento de'} ${v.oblig.nombre} (${v.oblig.organismo}). Necesito la documentación para prepararlo a tiempo. ¡Gracias!`)}">WhatsApp</a></div>
+        <div class="list-side">${chipVencimiento(v.estado, v.dias)}<a class="btn btn-sm btn-outline" target="_blank" rel="noopener" href="${calendarLink(`${v.oblig.nombre} — ${v.cliente.nombre}`, v.proximo, `Vencimiento de ${v.oblig.nombre} (${v.oblig.organismo}) para ${v.cliente.nombre}.`)}" title="Agendar recordatorio en tu Google Calendar">📅</a><div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px;"><a class="btn btn-sm btn-wa" target="_blank" rel="noopener" data-wa-cliente="${v.cliente.id}" href="${waLink(v.cliente.telefono, `Hola ${v.cliente.nombre}! Te escribo para recordarte que ${v.dias<0?'venció':'se acerca el vencimiento de'} ${v.oblig.nombre} (${v.oblig.organismo}). Necesito la documentación para prepararlo a tiempo. ¡Gracias!`)}">WhatsApp</a><span class="field-help">${fmtUltimoContacto(v.cliente.ultimoContacto)}</span></div></div>
       </div>`).join('') : `<div class="empty-state">No hay vencimientos próximos ni atrasados.</div>`;
 
     const pend = COBROS.filter(c => estadoCobro(c) !== 'cobrado').sort((a,b)=>pendienteDe(b)-pendienteDe(a)).slice(0,6);
@@ -1239,7 +1258,10 @@
         <td>${esc(c.telefono)}</td>
         <td class="num">${fmtMoneda(c.honorarioMensual, c.moneda)}</td>
         <td>${peor ? chipVencimiento(peor.estado, peor.dias) : '<span class="chip chip--neutral">Sin obligaciones</span>'}</td>
-        <td><a class="btn btn-sm btn-wa" target="_blank" rel="noopener" href="${waLink(c.telefono, mensajeContextualCliente(c))}" onclick="event.stopPropagation()" title="Abre WhatsApp con un mensaje ya armado según el estado del cliente (vencimiento urgente, cobro pendiente, o saludo si está todo al día)">WhatsApp</a></td>
+        <td>
+          <a class="btn btn-sm btn-wa" target="_blank" rel="noopener" data-wa-cliente="${c.id}" href="${waLink(c.telefono, mensajeContextualCliente(c))}" onclick="event.stopPropagation()" title="Abre WhatsApp con un mensaje ya armado según el estado del cliente (vencimiento urgente, cobro pendiente, o saludo si está todo al día)">WhatsApp</a>
+          <div class="cell-faint" style="margin-top:3px; white-space:nowrap;">${fmtUltimoContacto(c.ultimoContacto)}</div>
+        </td>
       </tr>`;
     }).join('') || `<tr><td colspan="7"><div class="empty-state">Sin resultados.</div></td></tr>`;
 
@@ -1689,7 +1711,7 @@
     $('#mda-vencimientos').innerHTML = eventos.length ? eventos.map(v => `
       <div class="list-row">
         <div class="list-main"><span class="list-title">${esc(v.cliente.nombre)}</span><span class="list-sub">${esc(v.oblig.nombre)}</span></div>
-        <div class="list-side">${chipVencimiento(v.estado, v.dias)}<a class="btn btn-sm btn-outline" target="_blank" rel="noopener" href="${calendarLink(`${v.oblig.nombre} — ${v.cliente.nombre}`, v.proximo, `Vencimiento de ${v.oblig.nombre} (${v.oblig.organismo}) para ${v.cliente.nombre}.`)}" title="Agendar en Google Calendar">📅</a><a class="btn btn-sm btn-wa" target="_blank" rel="noopener" href="${waLink(v.cliente.telefono, `Hola ${v.cliente.nombre}! Te escribo para recordarte que ${v.dias<0?'venció':'se acerca el vencimiento de'} ${v.oblig.nombre} (${v.oblig.organismo}). Necesito la documentación para prepararlo a tiempo. ¡Gracias!`)}">WhatsApp</a></div>
+        <div class="list-side">${chipVencimiento(v.estado, v.dias)}<a class="btn btn-sm btn-outline" target="_blank" rel="noopener" href="${calendarLink(`${v.oblig.nombre} — ${v.cliente.nombre}`, v.proximo, `Vencimiento de ${v.oblig.nombre} (${v.oblig.organismo}) para ${v.cliente.nombre}.`)}" title="Agendar en Google Calendar">📅</a><div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px;"><a class="btn btn-sm btn-wa" target="_blank" rel="noopener" data-wa-cliente="${v.cliente.id}" href="${waLink(v.cliente.telefono, `Hola ${v.cliente.nombre}! Te escribo para recordarte que ${v.dias<0?'venció':'se acerca el vencimiento de'} ${v.oblig.nombre} (${v.oblig.organismo}). Necesito la documentación para prepararlo a tiempo. ¡Gracias!`)}">WhatsApp</a><span class="field-help">${fmtUltimoContacto(v.cliente.ultimoContacto)}</span></div></div>
       </div>`).join('') : `<div class="empty-state">Sin vencimientos este día.</div>`;
 
     const tareasDia = TAREAS.filter(t => t.fecha === fechaISO).sort((a,b)=>a.creada.localeCompare(b.creada));
