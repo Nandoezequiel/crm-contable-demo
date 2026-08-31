@@ -353,6 +353,7 @@
     <nav class="navrail" id="navrail">
       <button data-view="panel" class="active"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Panel</button>
       <button data-view="clientes"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c0-3.6 2.5-6 5.5-6s5.5 2.4 5.5 6"/><circle cx="17.5" cy="9" r="2.4"/><path d="M15.8 14.3c2.6.2 4.7 2.4 4.7 5.7"/></svg>Clientes</button>
+      <button data-view="prospectos"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16l-6 8v6l-4-2v-4z"/></svg>Prospectos</button>
       <button data-view="obligaciones"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 12h7M9 16h7M9 8.5h3"/></svg>Obligaciones</button>
       <button data-view="cobros"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2.5" y="6" width="19" height="13" rx="2"/><path d="M2.5 10.5h19"/><path d="M6 15h4"/></svg>Cobros</button>
       <button data-view="agenda"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9.5h18"/><path d="M8 3v3M16 3v3"/></svg>Agenda</button>
@@ -458,6 +459,39 @@
               <th class="th-sort" data-sort="nombre">Cliente<span class="arrow">▲</span></th><th>Régimen</th><th class="th-sort" data-sort="prioridad">Prioridad<span class="arrow">▲</span></th><th>Contacto</th><th class="num th-sort" data-sort="honorario">Honorario<span class="arrow">▲</span></th><th class="th-sort" data-sort="vencimiento">Vencimientos<span class="arrow">▲</span></th><th></th>
             </tr></thead>
             <tbody id="tbody-clientes"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= PROSPECTOS ================= -->
+    <section class="view" data-view="prospectos">
+      <div class="view-head">
+        <div>
+          <h1>Prospectos</h1>
+          <p>Clientes potenciales, antes de que firmen contigo.</p>
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary" id="btn-nuevo-prospecto">+ Nuevo prospecto</button>
+        </div>
+      </div>
+      <div class="toolbar">
+        <div class="filter-tabs" id="filtro-prospectos">
+          <button data-f="todos" class="active">Todos</button>
+          <button data-f="contactado">Contactado</button>
+          <button data-f="reunion">Reunión</button>
+          <button data-f="propuesta">Propuesta</button>
+          <button data-f="ganado">Ganado</button>
+          <button data-f="perdido">Perdido</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Prospecto</th><th>Origen</th><th>Etapa</th><th></th>
+            </tr></thead>
+            <tbody id="tbody-prospectos"></tbody>
           </table>
         </div>
       </div>
@@ -665,6 +699,28 @@
   </div>
 </div>
 
+<!-- ============ Modal: nuevo prospecto ============ -->
+<div class="modal-overlay" id="modal-prospecto">
+  <div class="modal-panel">
+    <div class="modal-head">
+      <div><h2>Nuevo prospecto</h2><div class="sub">Cliente potencial, todavía no forma parte de la cartera.</div></div>
+      <button class="modal-close" data-close>&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label>Nombre</label><input id="fp2-nombre" type="text" placeholder="Ej. Panadería del barrio"></div>
+      <div class="field-row">
+        <div class="field"><label>Teléfono (WhatsApp)</label><input id="fp2-tel" type="text" placeholder="Ej. 099123456"></div>
+        <div class="field"><label>Origen</label><input id="fp2-origen" type="text" placeholder="Ej. Recomendado por Panadería La Espiga"></div>
+      </div>
+      <div class="field"><label>Notas</label><textarea id="fp2-notas" placeholder="opcional"></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" data-close>Cancelar</button>
+      <button class="btn btn-primary" id="btn-guardar-prospecto">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ============ Modal: nueva obligación de catálogo ============ -->
 <div class="modal-overlay" id="modal-obligacion">
   <div class="modal-panel">
@@ -776,6 +832,7 @@
   const PRIORIDAD_LABEL = { leve:'Leve', moderada:'Moderada', urgente:'Urgente' };
   const PRIORIDAD_COLOR = { leve:'var(--good)', moderada:'var(--warn)', urgente:'var(--critical)' };
   const PRIORIDAD_ORDEN = { urgente:0, moderada:1, leve:2 };
+  const ETAPA_LABEL = { contactado:'Contactado', reunion:'Reunión', propuesta:'Propuesta enviada', ganado:'Ganado', perdido:'Perdido' };
   function montoEnUYU(monto, moneda){ return moneda === 'USD' ? monto*TC.valor : monto; }
 
   function renderTC(){
@@ -839,7 +896,8 @@
     clienteOblig: 'LM_CLIENTE_OBLIG_V3',
     cobros: 'LM_COBROS_V4',
     tareas: 'LM_TAREAS_V1',
-    tc: 'LM_TC_V1'
+    tc: 'LM_TC_V1',
+    prospectos: 'LM_PROSPECTOS_V1'
   };
   function load(key, fallback){
     try{ const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }catch(e){ return fallback; }
@@ -852,8 +910,20 @@
   let COBROS = load(LS.cobros, null);
   let TAREAS = load(LS.tareas, null);
   let TC = load(LS.tc, null);
+  let PROSPECTOS = load(LS.prospectos, null);
 
   if(!TC){ TC = {valor:40, fecha:hoyISO()}; save(LS.tc, TC); }
+
+  if(!PROSPECTOS){
+    const A = (n) => addDaysISO(hoyISO(), n);
+    PROSPECTOS = [
+      {id:uid(), nombre:'Panadería del Cerro', telefono:'098112233', origen:'Recomendado por Panadería La Espiga', etapa:'reunion', notas:'Quiere migrar de un contador que dejó de atenderla.', fechaAlta:A(-6)},
+      {id:uid(), nombre:'Taller Mecánico Rossi', telefono:'099445566', origen:'Contacto por Instagram', etapa:'contactado', notas:'', fechaAlta:A(-2)},
+      {id:uid(), nombre:'Estudio de Arquitectura Bianchi', telefono:'', origen:'Referido por Estudio Fongaro', etapa:'propuesta', notas:'Propuesta enviada por mail, esperando respuesta.', fechaAlta:A(-15)},
+      {id:uid(), nombre:'Kiosco 24hs Pocitos', telefono:'091223344', origen:'', etapa:'perdido', notas:'Se quedó con su contador actual.', fechaAlta:A(-40)}
+    ];
+    save(LS.prospectos, PROSPECTOS);
+  }
 
   if(!OBLIGACIONES){
     OBLIGACIONES = [
@@ -995,7 +1065,7 @@
     save(LS.tareas, TAREAS);
   }
 
-  function persistAll(){ save(LS.clientes, CLIENTES); save(LS.obligaciones, OBLIGACIONES); save(LS.clienteOblig, CLIENTE_OBLIG); save(LS.cobros, COBROS); save(LS.tareas, TAREAS); }
+  function persistAll(){ save(LS.clientes, CLIENTES); save(LS.obligaciones, OBLIGACIONES); save(LS.clienteOblig, CLIENTE_OBLIG); save(LS.cobros, COBROS); save(LS.tareas, TAREAS); save(LS.prospectos, PROSPECTOS); }
 
   /* ---------------- cálculos de dominio ---------------- */
   function clienteById(id){ return CLIENTES.find(c => c.id === id); }
@@ -1340,6 +1410,58 @@
     $$('#tbody-clientes tr[data-id]').forEach(tr => tr.addEventListener('click', () => abrirFichaCliente(tr.dataset.id)));
   }
 
+  /* ---------------- render: prospectos ---------------- */
+  let filtroProspectos = 'todos';
+  function renderProspectos(){
+    let lista = PROSPECTOS.slice();
+    if(filtroProspectos !== 'todos') lista = lista.filter(p => p.etapa === filtroProspectos);
+    lista = lista.slice().sort((a,b) => b.fechaAlta.localeCompare(a.fechaAlta));
+    $('#tbody-prospectos').innerHTML = lista.length ? lista.map(p => `
+      <tr>
+        <td><div class="cell-name">${esc(p.nombre)}</div><div class="cell-faint">${esc(p.telefono||'')}</div></td>
+        <td class="cell-faint">${esc(p.origen||'—')}</td>
+        <td>
+          <select data-etapa="${p.id}" style="padding:5px 7px; border:1px solid var(--line); border-radius:6px; font-size:12.5px; background:var(--surface); color:var(--ink);">
+            ${Object.keys(ETAPA_LABEL).map(k => `<option value="${k}" ${p.etapa===k?'selected':''}>${ETAPA_LABEL[k]}</option>`).join('')}
+          </select>
+        </td>
+        <td style="white-space:nowrap;">
+          ${p.telefono ? `<a class="btn btn-sm btn-wa" target="_blank" rel="noopener" href="${waLink(p.telefono, `Hola ${p.nombre}! Te escribo del estudio contable, ¿cómo estás?`)}">WhatsApp</a>` : ''}
+          <button class="btn btn-sm btn-outline" data-convertir="${p.id}" type="button">Convertir a cliente</button>
+        </td>
+      </tr>`).join('') : `<tr><td colspan="4"><div class="empty-state">No hay prospectos en este filtro.</div></td></tr>`;
+
+    $$('#tbody-prospectos [data-etapa]').forEach(sel => sel.addEventListener('change', () => {
+      const p = PROSPECTOS.find(x => x.id === sel.dataset.etapa);
+      if(p){ p.etapa = sel.value; persistAll(); }
+    }));
+    $$('#tbody-prospectos [data-convertir]').forEach(btn => btn.addEventListener('click', () => {
+      const p = PROSPECTOS.find(x => x.id === btn.dataset.convertir);
+      if(!p) return;
+      p.etapa = 'ganado';
+      persistAll();
+      renderProspectos();
+      abrirNuevoCliente({nombre:p.nombre, telefono:p.telefono, notas:p.origen ? `Prospecto convertido — origen: ${p.origen}` : ''});
+    }));
+  }
+  $('#btn-nuevo-prospecto').addEventListener('click', () => {
+    ['fp2-nombre','fp2-tel','fp2-origen','fp2-notas'].forEach(id => $('#'+id).value = '');
+    abrirModal('modal-prospecto');
+  });
+  $('#btn-guardar-prospecto').addEventListener('click', () => {
+    const nombre = $('#fp2-nombre').value.trim();
+    if(!nombre){ $('#fp2-nombre').focus(); return; }
+    PROSPECTOS.push({id:uid(), nombre, telefono:$('#fp2-tel').value.trim(), origen:$('#fp2-origen').value.trim(), notas:$('#fp2-notas').value.trim(), etapa:'contactado', fechaAlta:hoyISO()});
+    persistAll();
+    cerrarModal('modal-prospecto');
+    renderProspectos();
+  });
+  $$('#filtro-prospectos button').forEach(b => b.addEventListener('click', () => {
+    filtroProspectos = b.dataset.f;
+    $$('#filtro-prospectos button').forEach(x => x.classList.toggle('active', x===b));
+    renderProspectos();
+  }));
+
   /* ---------------- render: obligaciones ---------------- */
   let sortObligaciones = {key:null, dir:1};
   function ordenarObligaciones(lista){
@@ -1411,6 +1533,7 @@
     $$('#navrail button').forEach(b => b.classList.toggle('active', b.dataset.view === view));
     if(view==='panel') renderPanel();
     if(view==='clientes') renderClientes();
+    if(view==='prospectos') renderProspectos();
     if(view==='obligaciones') renderObligaciones();
     if(view==='cobros') renderCobros();
     if(view==='agenda') renderAgenda();
@@ -1455,7 +1578,7 @@
     abrirModal('modal-cliente');
   }
 
-  function abrirNuevoCliente(){
+  function abrirNuevoCliente(prefill){
     clienteEnEdicion = null;
     $('#mc-titulo').textContent = 'Nuevo cliente';
     $('#mc-sub').textContent = '';
@@ -1467,9 +1590,14 @@
     $('#f-moneda').value = 'UYU';
     $('#f-prioridad').value = 'leve';
     $('#bloque-obligaciones').style.display = 'none';
+    if(prefill){
+      if(prefill.nombre) $('#f-nombre').value = prefill.nombre;
+      if(prefill.telefono) $('#f-tel').value = prefill.telefono;
+      if(prefill.notas) $('#f-notas').value = prefill.notas;
+    }
     abrirModal('modal-cliente');
   }
-  $('#btn-nuevo-cliente').addEventListener('click', abrirNuevoCliente);
+  $('#btn-nuevo-cliente').addEventListener('click', () => abrirNuevoCliente());
 
   function renderObligCliente(clienteId){
     renderObligAsignadas(clienteId);
