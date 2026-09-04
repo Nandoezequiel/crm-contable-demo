@@ -271,7 +271,7 @@
 
   .add-inline{border:1px dashed var(--line); border-radius:8px; padding:10px 12px; margin-top:8px;}
   .add-inline-toggle{background:none; border:none; color:var(--accent); font-weight:600; font-size:12.5px; cursor:pointer; padding:2px 0;}
-  .add-inline-form{display:none; grid-template-columns:1.1fr .65fr .5fr .8fr .95fr auto; gap:8px; margin-top:10px; align-items:end;}
+  .add-inline-form{display:none; grid-template-columns:1.1fr .65fr .5fr .8fr .55fr .85fr auto; gap:8px; margin-top:10px; align-items:end;}
   .add-inline-form.open{display:grid;}
   .add-inline-form .field{margin-bottom:0;}
   .add-inline-form input, .add-inline-form select{padding:6px 8px; font-size:12.5px; border:1px solid var(--line); border-radius:6px; background:var(--surface); width:100%;}
@@ -357,13 +357,15 @@
       <button data-view="obligaciones"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 12h7M9 16h7M9 8.5h3"/></svg>Obligaciones</button>
       <button data-view="cobros"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2.5" y="6" width="19" height="13" rx="2"/><path d="M2.5 10.5h19"/><path d="M6 15h4"/></svg>Cobros</button>
       <button data-view="agenda"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9.5h18"/><path d="M8 3v3M16 3v3"/></svg>Agenda</button>
+      <button data-view="finanzas" id="nav-finanzas" style="display:none;"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v20M17 5.5c0-1.9-2.2-3.5-5-3.5s-5 1.6-5 3.5S9.2 9 12 9s5 1.6 5 3.5-2.2 3.5-5 3.5-5-1.6-5-3.5"/></svg>Finanzas</button>
     </nav>
     <div class="sidebar-foot" style="margin-top:auto; padding-top:12px; border-top:1px solid var(--line); display:flex; flex-direction:column; gap:6px;">
-      <div class="tc-widget" id="tc-widget" title="Cotización de referencia USD → UYU, para totales y comparaciones. La actualizás vos manualmente, no se descarga sola.">
+      <div class="tc-widget" id="tc-widget" title="Cotización de referencia USD → UYU, para totales y comparaciones. Se puede traer automáticamente (dólar interbancario, fuente no oficial vía dolarapi.com) o editar a mano.">
         <div class="tc-row">
           <span class="tc-label">TC ref. USD</span>
           <div class="tc-display" id="tc-display">
             <span class="mono" id="tc-valor-txt"></span>
+            <button type="button" class="btn btn-ghost btn-sm" id="btn-actualizar-tc" style="padding:2px 4px;" title="Traer cotización actual">🔄</button>
             <button type="button" class="btn btn-ghost btn-sm" id="btn-abrir-editar-tc" style="padding:2px 4px;">✎</button>
           </div>
           <div class="tc-edit" id="tc-edit">
@@ -373,6 +375,28 @@
           </div>
         </div>
         <span class="field-help" id="tc-fecha-txt"></span>
+      </div>
+      <div class="tc-widget" id="notif-widget" title="Avisos del navegador: para tareas con hora, X minutos antes; y un resumen una vez por día si hay vencimientos vencidos o que vencen hoy.">
+        <div class="tc-row">
+          <span class="tc-label">🔔 Notificaciones</span>
+          <label style="display:flex; align-items:center; gap:4px; font-size:11.5px; cursor:pointer;">
+            <input type="checkbox" id="chk-notif-activas"> Activar
+          </label>
+        </div>
+        <div class="tc-row" id="notif-min-row" style="display:none;">
+          <span class="field-help">Avisar</span>
+          <input type="number" id="notif-min" min="1" max="180" style="width:50px; padding:3px 5px; border:1px solid var(--line); border-radius:5px; font-size:11.5px; background:var(--surface); color:var(--ink);">
+          <span class="field-help">min. antes (tareas)</span>
+        </div>
+        <span class="field-help" id="notif-estado" style="display:none; color:var(--critical);"></span>
+      </div>
+      <div class="tc-widget" id="fin-widget" title="Módulo aparte, personal — no tiene relación con clientes ni cobros del estudio.">
+        <div class="tc-row">
+          <span class="tc-label">💰 Finanzas personales</span>
+          <label style="display:flex; align-items:center; gap:4px; font-size:11.5px; cursor:pointer;">
+            <input type="checkbox" id="chk-fin-activas"> Activar
+          </label>
+        </div>
       </div>
       <button type="button" id="btn-ir-portal" class="btn btn-outline btn-sm" style="width:100%; justify-content:center;">🔗 Portal del cliente</button>
       <button type="button" class="btn btn-outline btn-sm btn-tema" style="width:100%; justify-content:center;" title="Cambiar modo claro/oscuro"><span class="tema-icono">🌙</span>&nbsp;<span class="tema-label">Modo oscuro</span></button>
@@ -450,12 +474,29 @@
         </div>
       </div>
       <div class="toolbar">
-        <div class="search"><input type="text" id="buscar-cliente" placeholder="Buscar por nombre, CI o RUT…"></div>
+        <div class="search"><input type="text" id="buscar-cliente" placeholder="Buscar por nombre, CI, RUT, teléfono, nota, etiqueta o trámite…"></div>
+        <button class="btn btn-outline btn-sm" id="btn-ver-cerrados" type="button">Ver clientes cerrados</button>
+        <button class="btn btn-outline btn-sm" id="btn-modo-seleccion" type="button">✏️ Seleccionar</button>
+      </div>
+      <div class="panel" id="barra-seleccion-clientes" style="display:none;">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <span class="field-help" id="txt-seleccion-clientes" style="font-weight:600; color:var(--ink);"></span>
+          <select id="sel-prioridad-lote" style="padding:6px 8px; border:1px solid var(--line); border-radius:6px; background:var(--surface); color:var(--ink); font-size:12.5px;">
+            <option value="leve">Leve</option><option value="moderada">Moderada</option><option value="urgente">Urgente</option>
+          </select>
+          <button class="btn btn-outline btn-sm" id="btn-aplicar-prioridad-lote" type="button">Cambiar prioridad</button>
+          <input id="input-etiqueta-lote" type="text" list="lista-etiquetas-lote-datalist" placeholder="Etiqueta…" style="width:120px; padding:6px 8px; border:1px solid var(--line); border-radius:6px; background:var(--surface); color:var(--ink); font-size:12.5px;">
+          <datalist id="lista-etiquetas-lote-datalist"></datalist>
+          <button class="btn btn-outline btn-sm" id="btn-agregar-etiqueta-lote" type="button">Agregar etiqueta</button>
+          <button class="btn btn-outline btn-sm" id="btn-cerrar-lote" type="button">Cerrar seleccionados</button>
+          <button class="btn btn-ghost btn-sm" id="btn-cancelar-seleccion" type="button">Cancelar</button>
+        </div>
       </div>
       <div class="panel">
         <div class="table-wrap">
           <table>
             <thead id="thead-clientes"><tr>
+              <th class="th-check" id="th-check-clientes" style="display:none;"><input type="checkbox" id="chk-todos-clientes"></th>
               <th class="th-sort" data-sort="nombre">Cliente<span class="arrow">▲</span></th><th>Régimen</th><th class="th-sort" data-sort="prioridad">Prioridad<span class="arrow">▲</span></th><th>Contacto</th><th class="num th-sort" data-sort="honorario">Honorario<span class="arrow">▲</span></th><th class="th-sort" data-sort="vencimiento">Vencimientos<span class="arrow">▲</span></th><th></th>
             </tr></thead>
             <tbody id="tbody-clientes"></tbody>
@@ -531,6 +572,19 @@
           <button class="btn btn-outline" id="btn-exportar-cobros">⇩ Exportar Excel</button>
         </div>
       </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Nuevo cobro</h2><span class="hint">elegí un cliente de la lista</span></div>
+        <div style="display:grid; grid-template-columns:1.3fr 1.1fr .7fr .55fr .85fr auto; gap:8px; align-items:end;">
+          <div class="field"><label>Cliente</label><input id="nc-cliente" type="text" list="datalist-clientes-cobro" placeholder="Nombre del cliente…" autocomplete="off"></div>
+          <div class="field"><label>Trámite / concepto</label><input id="nc-concepto" type="text" placeholder="Ej. Honorarios extra"></div>
+          <div class="field"><label>Importe</label><input id="nc-monto" type="number" min="0" step="100"></div>
+          <div class="field"><label>Moneda</label><select id="nc-moneda"><option value="UYU">UYU</option><option value="USD">USD</option></select></div>
+          <div class="field"><label>Fecha</label><input id="nc-fecha" type="date"></div>
+          <button class="btn btn-primary btn-sm" id="btn-guardar-nuevo-cobro" type="button">Agregar</button>
+        </div>
+        <div class="field-help" id="nc-error" style="display:none; color:var(--critical); margin-top:6px;"></div>
+        <datalist id="datalist-clientes-cobro"></datalist>
+      </div>
       <div class="toolbar">
         <div class="filter-tabs" id="filtro-cobros">
           <button data-f="todos" class="active">Todos</button>
@@ -539,16 +593,33 @@
           <button data-f="cobrado">Cobrados</button>
         </div>
         <select id="filtro-etiqueta" style="padding:7px 10px; border:1px solid var(--line); border-radius:8px; background:var(--surface); font-size:12.5px; color:var(--ink);"></select>
+        <div class="filter-tabs" id="vista-cobros-toggle">
+          <button data-v="tramite" class="active">Por trámite</button>
+          <button data-v="persona">Por persona</button>
+        </div>
+        <button class="btn btn-outline btn-sm" id="btn-modo-seleccion-cobros" type="button" title="Seleccionar varios cobros pendientes para marcarlos cobrados o eliminarlos juntos">✏️ Seleccionar</button>
       </div>
-      <div class="panel">
+      <div class="panel" id="barra-seleccion-cobros" style="display:none;">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <span class="field-help" id="txt-seleccion-cobros" style="font-weight:600; color:var(--ink);"></span>
+          <button class="btn btn-outline btn-sm" id="btn-marcar-cobrado-lote" type="button">Marcar cobrado</button>
+          <button class="btn btn-outline btn-sm" id="btn-eliminar-cobro-lote" type="button">Eliminar</button>
+          <button class="btn btn-ghost btn-sm" id="btn-cancelar-seleccion-cobros" type="button">Cancelar</button>
+        </div>
+      </div>
+      <div class="panel" id="vista-cobros-tramite">
         <div class="table-wrap">
           <table>
             <thead id="thead-cobros"><tr>
+              <th class="th-check" id="th-check-cobros" style="display:none;"><input type="checkbox" id="chk-todos-cobros"></th>
               <th class="th-sort" data-sort="cliente">Cliente<span class="arrow">▲</span></th><th>Concepto</th><th class="th-sort" data-sort="mes">Mes<span class="arrow">▲</span></th><th class="num th-sort" data-sort="monto">Monto<span class="arrow">▲</span></th><th class="num th-sort" data-sort="pendiente">Pendiente<span class="arrow">▲</span></th><th class="th-sort" data-sort="estado">Estado<span class="arrow">▲</span></th><th></th>
             </tr></thead>
             <tbody id="tbody-cobros"></tbody>
           </table>
         </div>
+      </div>
+      <div class="panel" id="vista-cobros-persona" style="display:none;">
+        <div id="lista-cobros-persona"></div>
       </div>
     </section>
 
@@ -565,11 +636,108 @@
           <button type="button" id="agenda-prev">‹</button>
           <h2 id="agenda-mes-label"></h2>
           <button type="button" id="agenda-next">›</button>
+          <button type="button" class="btn btn-outline btn-sm" id="agenda-hoy" style="margin-left:8px;">Hoy</button>
         </div>
         <div class="agenda-grid" id="agenda-grid-head">
           <div class="agenda-dow">Lun</div><div class="agenda-dow">Mar</div><div class="agenda-dow">Mié</div><div class="agenda-dow">Jue</div><div class="agenda-dow">Vie</div><div class="agenda-dow">Sáb</div><div class="agenda-dow">Dom</div>
         </div>
         <div class="agenda-grid" id="agenda-grid" style="margin-top:1px;"></div>
+      </div>
+    </section>
+
+    <!-- ================= FINANZAS PERSONALES ================= -->
+    <section class="view" data-view="finanzas">
+      <div class="view-head">
+        <div>
+          <h1>Finanzas personales</h1>
+          <p>Tus propias finanzas — sin relación con los clientes ni cobros del estudio.</p>
+        </div>
+      </div>
+      <div class="filter-tabs" id="fin-subnav" style="margin-bottom:16px;">
+        <button data-fs="resumen" class="active">Resumen</button>
+        <button data-fs="fijos">Gastos fijos</button>
+        <button data-fs="variables">Gastos variables</button>
+        <button data-fs="historial">Historial</button>
+      </div>
+
+      <div class="fin-sub" data-fs="resumen">
+        <div id="fin-alerta"></div>
+        <div class="stat-row" id="fin-stat-row" style="grid-template-columns:repeat(5,1fr);"></div>
+        <div class="chart-row">
+          <div class="panel">
+            <div class="panel-head"><h2>Próximos vencimientos</h2></div>
+            <div id="fin-proximos"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h2>Distribución del mes</h2></div>
+            <div class="echart" id="chart-fin-donut" style="height:200px;"></div>
+          </div>
+        </div>
+        <div class="chart-row">
+          <div class="panel">
+            <div class="panel-head"><h2>Ahorro por mes</h2></div>
+            <div class="echart" id="chart-fin-ahorro" style="height:200px;"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h2>Evolución de gastos</h2></div>
+            <div class="echart" id="chart-fin-evolucion" style="height:200px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="fin-sub" data-fs="fijos" style="display:none;">
+        <div class="panel">
+          <div class="panel-head"><h2>Nuevo gasto fijo</h2></div>
+          <div style="display:grid; grid-template-columns:1.3fr .7fr .5fr 1.3fr auto; gap:8px; align-items:end;">
+            <div class="field"><label>Concepto</label><input id="ff-concepto" type="text" placeholder="Ej. Alquiler"></div>
+            <div class="field"><label>Monto</label><input id="ff-monto" type="number" min="0" step="100"></div>
+            <div class="field"><label>Día</label><input id="ff-dia" type="number" min="1" max="31" value="10"></div>
+            <div class="field"><label>Notas</label><input id="ff-notas" type="text" placeholder="opcional"></div>
+            <button class="btn btn-primary btn-sm" id="btn-guardar-fijo" type="button">Agregar</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Pagado</th><th>Concepto</th><th class="num">Monto</th><th>Día</th><th>Notas</th><th></th></tr></thead>
+              <tbody id="tbody-fin-fijos"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="fin-sub" data-fs="variables" style="display:none;">
+        <div class="panel">
+          <div class="panel-head"><h2>Nuevo gasto variable</h2></div>
+          <div style="display:grid; grid-template-columns:.8fr 1.3fr .7fr .85fr auto; gap:8px; align-items:end;">
+            <div class="field"><label>Categoría</label><select id="fv-categoria"><option>Supermercado</option><option>Ocio</option><option>Salud</option><option>Otro</option></select></div>
+            <div class="field"><label>Descripción</label><input id="fv-descripcion" type="text"></div>
+            <div class="field"><label>Monto</label><input id="fv-monto" type="number" min="0" step="50"></div>
+            <div class="field"><label>Fecha</label><input id="fv-fecha" type="date"></div>
+            <button class="btn btn-primary btn-sm" id="btn-guardar-variable" type="button">Registrar</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Fecha</th><th>Categoría</th><th>Descripción</th><th class="num">Monto</th><th></th></tr></thead>
+              <tbody id="tbody-fin-variables"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="fin-sub" data-fs="historial" style="display:none;">
+        <div class="panel">
+          <div class="panel-head"><h2>Cerrar el mes</h2></div>
+          <p class="field-help" style="margin:0 0 10px;">Archiva los totales del mes en curso. Los gastos fijos quedan sin marcar como pagados para el nuevo mes.</p>
+          <button class="btn btn-outline btn-sm" id="btn-cerrar-mes-fin" type="button">Cerrar mes actual y archivarlo</button>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>Meses archivados</h2></div>
+          <select id="sel-historial-fin" style="padding:7px 10px; border:1px solid var(--line); border-radius:8px; background:var(--surface); font-size:12.5px; color:var(--ink); margin-bottom:14px;"><option value="">— Seleccioná un mes —</option></select>
+          <div id="fin-historial-detalle"></div>
+        </div>
       </div>
     </section>
 
@@ -604,7 +772,11 @@
       <button type="button" class="btn btn-outline btn-sm" id="toggle-nueva-tarea" style="margin-top:6px;">+ Agregar tarea</button>
       <div id="form-nueva-tarea" style="display:none; margin-top:12px; border:1px dashed var(--line); border-radius:9px; padding:14px;">
         <div class="field"><label>Título</label><input id="mt-titulo" type="text" placeholder="Ej. Preparar documentación IVA"></div>
-        <div class="field"><label>Cliente (opcional)</label><select id="mt-cliente"></select></div>
+        <div class="field-row">
+          <div class="field"><label>Cliente (opcional)</label><select id="mt-cliente"></select></div>
+          <div class="field"><label>Hora (opcional)</label><input id="mt-hora" type="time"></div>
+        </div>
+        <div class="field-help" style="margin:-6px 0 12px;">Si cargás una hora, al guardar se abre un link para agendarla también en tu Google Calendar.</div>
         <div class="field"><label>Notas (opcional)</label><textarea id="mt-notas" rows="2" placeholder="Detalle adicional…"></textarea></div>
         <div class="actions">
           <button type="button" class="btn btn-outline btn-sm" id="btn-cancelar-tarea">Cancelar</button>
@@ -625,6 +797,7 @@
       </div>
       <div style="display:flex; align-items:flex-start; gap:6px;">
         <button type="button" class="btn btn-outline btn-sm" id="btn-estado-cuenta" style="display:none;" title="Abre un documento imprimible con las obligaciones y el historial de cobros de este cliente">🖨️ Estado de cuenta</button>
+        <button type="button" class="btn btn-outline btn-sm" id="btn-cerrar-reabrir-cliente" style="display:none;"></button>
         <button class="modal-close" data-close>&times;</button>
       </div>
     </div>
@@ -666,6 +839,14 @@
       <div class="field"><label>Notas</label><textarea id="f-notas" placeholder="opcional"></textarea></div>
 
       <div id="bloque-obligaciones" style="display:none;">
+        <div class="section-title">Etiquetas</div>
+        <div id="lista-etiquetas-cliente" style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;"></div>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <input id="fcl-etiqueta" type="text" list="lista-etiquetas-cliente-datalist" placeholder="Ej. Gastronomía" style="flex:1; padding:6px 8px; font-size:12.5px; border:1px solid var(--line); border-radius:6px; background:var(--surface); color:var(--ink);">
+          <datalist id="lista-etiquetas-cliente-datalist"></datalist>
+          <button type="button" class="btn btn-outline btn-sm" id="btn-agregar-etiqueta-cliente">+ Agregar</button>
+        </div>
+
         <div class="section-title">Obligaciones asignadas</div>
         <div id="lista-oblig-cliente"></div>
         <button type="button" class="collapse-toggle" id="toggle-oblig-catalogo"><span>+ Asignar otra obligación</span><span class="chev">⌄</span></button>
@@ -685,6 +866,7 @@
             <div class="field"><label>Monto</label><input id="fc-monto" type="number" min="0" step="100"></div>
             <div class="field"><label>Moneda</label><select id="fc-moneda"><option value="UYU">UYU</option><option value="USD">USD</option></select></div>
             <div class="field"><label>Fecha</label><input id="fc-fecha" type="date"></div>
+            <div class="field"><label>Cuotas (opcional)</label><input id="fc-cuotas" type="number" min="0" max="60" placeholder="Ej. 3" title="Si cargás un número, se arma un plan de esa cantidad de cuotas mensuales iguales para hacerle seguimiento al pago."></div>
             <div class="field"><label>Etiqueta (opcional)</label><input id="fc-etiqueta" type="text" list="lista-etiquetas" placeholder="Ej. Auditoría"></div>
             <button class="btn btn-primary btn-sm" id="btn-guardar-cobro-adhoc" type="button">Agregar</button>
           </div>
@@ -786,7 +968,49 @@
   </div>
 </div>
 
+<!-- ============ Modal: editar cobro (con plan de cuotas) ============ -->
+<div class="modal-overlay" id="modal-editar-cobro">
+  <div class="modal-panel">
+    <div class="modal-head">
+      <div><h2>Editar cobro</h2><div class="sub" id="mec-sub"></div></div>
+      <button class="modal-close" data-close>&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="field-row">
+        <div class="field"><label>Trámite / concepto</label><input id="mec-concepto" type="text"></div>
+        <div class="field"><label>Moneda</label><select id="mec-moneda"><option value="UYU">UYU</option><option value="USD">USD</option></select></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Importe</label><input id="mec-monto" type="number" min="0" step="100"></div>
+        <div class="field"><label>Fecha</label><input id="mec-fecha" type="date"></div>
+      </div>
+      <div class="field-help" id="mec-estado" style="margin:-4px 0 12px;"></div>
+
+      <button type="button" class="collapse-toggle" id="toggle-cuotas-editar"><span id="resumen-cuotas-editar">Sin plan de cuotas</span><span class="chev">⌄</span></button>
+      <div class="collapse-body" id="body-cuotas-editar">
+        <div class="field-row" style="align-items:end;">
+          <div class="field"><label>Cantidad de cuotas</label><input id="mec-cant-cuotas" type="number" min="2" max="60" value="3"></div>
+          <button type="button" class="btn btn-outline btn-sm" id="btn-generar-cuotas-editar" style="margin-bottom:12px;">Generar plan</button>
+        </div>
+        <div id="lista-cuotas-editar"></div>
+        <div class="actions" style="margin-top:8px;">
+          <button type="button" class="btn btn-outline btn-sm" id="btn-guardar-cuotas-editar">Guardar cuotas</button>
+          <button type="button" class="btn btn-outline btn-sm" id="btn-quitar-cuotas-editar">Quitar plan de cuotas</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot" style="justify-content:space-between;">
+      <button class="btn btn-outline" id="btn-eliminar-cobro" style="color:var(--critical);">Eliminar</button>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-outline" data-close>Cancelar</button>
+        <button class="btn btn-primary" id="btn-guardar-cobro-editado">Guardar cambios</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="imprimible"></div>
+<div id="toast-wrap" style="position:fixed; left:50%; bottom:24px; transform:translateX(-50%); z-index:80; display:flex; flex-direction:column; gap:8px; align-items:center;"></div>
 
 <script>
 (function(){
@@ -826,6 +1050,20 @@
   const fmtMes = (iso) => { const [y,m]=iso.split('-'); const meses=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']; return `${meses[+m-1]} ${y}`; };
   const fmtMoneda = (monto, moneda) => `${moneda==='USD'?'U$S':'$'} ${Math.round(monto).toLocaleString('es-UY')}`;
   const esc = (s) => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const normalizarTexto = (s) => String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+
+  function mostrarToast(msg){
+    const wrap = document.getElementById('toast-wrap');
+    const t = document.createElement('div');
+    t.textContent = msg;
+    t.style.cssText = 'background:var(--ink); color:var(--paper); padding:9px 18px; border-radius:99px; font-size:13px; font-weight:600; box-shadow:var(--shadow); opacity:0; transform:translateY(8px); transition:opacity .18s ease, transform .18s ease;';
+    wrap.appendChild(t);
+    requestAnimationFrame(() => { t.style.opacity='1'; t.style.transform='translateY(0)'; });
+    setTimeout(() => {
+      t.style.opacity='0'; t.style.transform='translateY(8px)';
+      setTimeout(() => t.remove(), 220);
+    }, 2600);
+  }
 
   const REGIMEN_LABEL = { monotributo:'Monotributo', literal_e:'Literal E', iva_irae:'IVA + IRAE', irae_general:'IRAE general' };
   const REGIMEN_COLOR = { monotributo:'var(--reg-1)', literal_e:'var(--reg-2)', iva_irae:'var(--reg-3)', irae_general:'var(--reg-4)' };
@@ -837,7 +1075,7 @@
 
   function renderTC(){
     $('#tc-valor-txt').textContent = `$ ${TC.valor.toLocaleString('es-UY',{minimumFractionDigits:2, maximumFractionDigits:2})}`;
-    $('#tc-fecha-txt').textContent = `Actualizado ${fmtFecha(TC.fecha)}`;
+    $('#tc-fecha-txt').textContent = `${TC.fuente==='auto' ? 'Cotización BCU' : 'Actualizado'} ${fmtFecha(TC.fecha)}${TC.fuente==='auto' ? ' (dolarapi.com)' : ' (manual)'}`;
   }
   function abrirEditorTC(){
     $('#tc-input').value = TC.valor;
@@ -847,11 +1085,34 @@
   }
   function guardarTC(){
     const v = Number($('#tc-input').value);
-    if(v > 0){ TC = {valor:v, fecha:hoyISO()}; save(LS.tc, TC); }
+    if(v > 0){ TC = {valor:v, fecha:hoyISO(), fuente:'manual'}; save(LS.tc, TC); }
     $('#tc-edit').classList.remove('open');
     $('#tc-display').style.display = 'flex';
     renderTC();
     if($('.view[data-view="panel"]').classList.contains('active')) renderPanel();
+  }
+  async function actualizarCotizacionAutomatica(silencioso){
+    const btn = $('#btn-actualizar-tc');
+    btn.disabled = true;
+    const textoOriginal = btn.textContent;
+    btn.textContent = '⏳';
+    try {
+      const r = await fetch('https://uy.dolarapi.com/v1/cotizaciones/usd');
+      if(!r.ok) throw new Error('respuesta no ok');
+      const d = await r.json();
+      const v = Number(d.venta || d.compra || d.valor);
+      if(!v || v <= 0) throw new Error('valor inválido');
+      TC = {valor:v, fecha:hoyISO(), fuente:'auto'};
+      save(LS.tc, TC);
+      renderTC();
+      if($('.view[data-view="panel"]').classList.contains('active')) renderPanel();
+      if(!silencioso) mostrarToast(`Cotización actualizada: $ ${v.toFixed(2)}`);
+    } catch(e) {
+      if(!silencioso) mostrarToast('No se pudo traer la cotización — se mantiene el valor actual.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = textoOriginal;
+    }
   }
 
   /* ---------------- columnas ordenables ---------------- */
@@ -883,22 +1144,40 @@
     return d;
   }
   function waLink(tel, msg){ return `https://wa.me/${telWhatsapp(tel)}?text=${encodeURIComponent(msg)}`; }
-  function calendarLink(titulo, fechaISO, detalles){
-    const inicio = fechaISO.replace(/-/g,'');
-    const fin = addDaysISO(fechaISO, 1).replace(/-/g,'');
-    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(titulo)}&dates=${inicio}/${fin}&details=${encodeURIComponent(detalles)}`;
+  function calendarLink(titulo, fechaISO, detalles, horaHHMM){
+    let inicio, fin;
+    if(horaHHMM){
+      const [h,m] = horaHHMM.split(':');
+      inicio = fechaISO.replace(/-/g,'') + 'T' + h.padStart(2,'0') + m.padStart(2,'0') + '00';
+      fin = fechaISO.replace(/-/g,'') + 'T' + String(Math.min(23,(+h)+1)).padStart(2,'0') + m.padStart(2,'0') + '00';
+    } else {
+      inicio = fechaISO.replace(/-/g,'');
+      fin = addDaysISO(fechaISO, 1).replace(/-/g,'');
+    }
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(titulo)}&dates=${inicio}/${fin}&details=${encodeURIComponent(detalles)}&ctz=America/Montevideo`;
+  }
+  function abrirLinkNuevaPestana(url){
+    const a = document.createElement('a');
+    a.href = url; a.target = '_blank'; a.rel = 'noopener';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
   }
 
   /* ---------------- estado / persistencia ---------------- */
   const LS = {
-    clientes: 'LM_CLIENTES_V4',
+    clientes: 'LM_CLIENTES_V5',
     obligaciones: 'LM_OBLIG_CATALOGO_V3',
     clienteOblig: 'LM_CLIENTE_OBLIG_V3',
-    cobros: 'LM_COBROS_V4',
-    tareas: 'LM_TAREAS_V1',
+    cobros: 'LM_COBROS_V5',
+    tareas: 'LM_TAREAS_V2',
     tc: 'LM_TC_V1',
-    prospectos: 'LM_PROSPECTOS_V1'
+    prospectos: 'LM_PROSPECTOS_V1',
+    finFijos: 'LM_FIN_FIJOS_V1',
+    finVariables: 'LM_FIN_VARIABLES_V1',
+    finHistorial: 'LM_FIN_HISTORIAL_V1',
+    finConfig: 'LM_FIN_CONFIG_V1'
   };
+  const LS_NOTIF_ACTIVAS = 'UI_NOTIF_ACTIVAS';
+  const LS_NOTIF_MINUTOS = 'UI_NOTIF_MINUTOS';
   function load(key, fallback){
     try{ const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }catch(e){ return fallback; }
   }
@@ -911,8 +1190,16 @@
   let TAREAS = load(LS.tareas, null);
   let TC = load(LS.tc, null);
   let PROSPECTOS = load(LS.prospectos, null);
+  let FIN_FIJOS = load(LS.finFijos, null) || [];
+  let FIN_VARIABLES = load(LS.finVariables, null) || [];
+  let FIN_HISTORIAL = load(LS.finHistorial, null) || [];
+  let FIN_CONFIG = load(LS.finConfig, null) || {activo:false, ingresoMensual:0, metaAhorro:0};
+  if(!load(LS.finFijos, null)) save(LS.finFijos, FIN_FIJOS);
+  if(!load(LS.finVariables, null)) save(LS.finVariables, FIN_VARIABLES);
+  if(!load(LS.finHistorial, null)) save(LS.finHistorial, FIN_HISTORIAL);
+  if(!load(LS.finConfig, null)) save(LS.finConfig, FIN_CONFIG);
 
-  if(!TC){ TC = {valor:40, fecha:hoyISO()}; save(LS.tc, TC); }
+  if(!TC){ TC = {valor:40, fecha:hoyISO(), fuente:'manual'}; save(LS.tc, TC); }
 
   if(!PROSPECTOS){
     const A = (n) => addDaysISO(hoyISO(), n);
@@ -947,17 +1234,17 @@
   if(!CLIENTES){
     const A = (n) => addDaysISO(hoyISO(), n);
     CLIENTES = [
-      {id:'c1', nombre:'Constructora Delta SRL', tipo:'juridica', ciRut:'21.402.117.0011', telefono:'099452301', email:'admin@delta.com.uy', regimen:'irae_general', honorarioMensual:60000, moneda:'UYU', prioridad:'moderada', driveUrl:'', codigoAcceso:'DELTA-101', fechaAlta:A(-500), activo:true, notas:'Tiene 6 empleados en obra.', ultimoContacto:A(-2)},
-      {id:'c2', nombre:'Ferretería Núñez Hnos.', tipo:'juridica', ciRut:'21.556.230.0018', telefono:'098771122', email:'nunezhnos@gmail.com', regimen:'iva_irae', honorarioMensual:32000, moneda:'UYU', prioridad:'leve', driveUrl:'https://drive.google.com/drive/folders/ejemplo-nunez', codigoAcceso:'NUNEZ-102', fechaAlta:A(-620), activo:true, notas:'', ultimoContacto:A(-25)},
-      {id:'c3', nombre:'Panadería La Espiga SRL', tipo:'juridica', ciRut:'21.334.881.0014', telefono:'094112233', email:'', regimen:'iva_irae', honorarioMensual:28000, moneda:'UYU', prioridad:'leve', driveUrl:'', codigoAcceso:'ESPIGA-103', fechaAlta:A(-300), activo:true, notas:''},
-      {id:'c4', nombre:'Lucía Ferreira — Diseño Gráfico', tipo:'fisica', ciRut:'4.556.213-4', telefono:'099887766', email:'lucia.dg@gmail.com', regimen:'literal_e', honorarioMensual:12000, moneda:'UYU', prioridad:'leve', driveUrl:'https://drive.google.com/drive/folders/ejemplo-lucia', codigoAcceso:'LUCIA-104', fechaAlta:A(-210), activo:true, notas:''},
-      {id:'c5', nombre:'Rodrigo Batista — Consultor IT', tipo:'fisica', ciRut:'3.998.221-1', telefono:'091223344', email:'', regimen:'literal_e', honorarioMensual:400, moneda:'USD', prioridad:'urgente', driveUrl:'', codigoAcceso:'RODRIGO-105', fechaAlta:A(-150), activo:true, notas:'Factura en dólares a una empresa de Argentina.'},
-      {id:'c6', nombre:'Martín Silveira', tipo:'fisica', ciRut:'4.887.001-9', telefono:'098001122', email:'', regimen:'monotributo', honorarioMensual:6000, moneda:'UYU', prioridad:'leve', driveUrl:'', codigoAcceso:'MARTIN-106', fechaAlta:A(-90), activo:true, notas:'Feria vecinal, monotributo social MIDES.'},
-      {id:'c7', nombre:'Almacén Doña Rosa', tipo:'fisica', ciRut:'3.556.774-2', telefono:'097665544', email:'', regimen:'monotributo', honorarioMensual:5000, moneda:'UYU', prioridad:'moderada', driveUrl:'', codigoAcceso:'DROSA-107', fechaAlta:A(-800), activo:true, notas:''},
-      {id:'c8', nombre:'Estudio Fongaro & Asoc.', tipo:'juridica', ciRut:'21.229.556.0013', telefono:'099334455', email:'contacto@fongaro.uy', regimen:'irae_general', honorarioMensual:45000, moneda:'UYU', prioridad:'leve', driveUrl:'https://drive.google.com/drive/folders/ejemplo-fongaro', codigoAcceso:'FONGARO-108', fechaAlta:A(-980), activo:true, notas:'Escritorio de arquitectura, 3 empleados.'},
-      {id:'c9', nombre:'Carpintería Bianchi', tipo:'fisica', ciRut:'3.771.204-8', telefono:'096554433', email:'', regimen:'literal_e', honorarioMensual:14000, moneda:'UYU', prioridad:'leve', driveUrl:'', codigoAcceso:'BIANCHI-109', fechaAlta:A(-60), activo:true, notas:'Unipersonal, taller propio.'},
-      {id:'c10', nombre:'Verónica Acosta — Traductora', tipo:'fisica', ciRut:'4.221.087-6', telefono:'092334411', email:'', regimen:'literal_e', honorarioMensual:9000, moneda:'UYU', prioridad:'leve', driveUrl:'', codigoAcceso:'VERONICA-110', fechaAlta:A(-40), activo:true, notas:''},
-      {id:'c11', nombre:'Kiosco El Sol', tipo:'fisica', ciRut:'3.667.902-0', telefono:'095112200', email:'', regimen:'monotributo', honorarioMensual:4500, moneda:'UYU', prioridad:'moderada', driveUrl:'', codigoAcceso:'ELSOL-111', fechaAlta:A(-25), activo:true, notas:''}
+      {id:'c1', nombre:'Constructora Delta SRL', tipo:'juridica', ciRut:'21.402.117.0011', telefono:'099452301', email:'admin@delta.com.uy', regimen:'irae_general', honorarioMensual:60000, moneda:'UYU', prioridad:'moderada', driveUrl:'', codigoAcceso:'DELTA-101', fechaAlta:A(-500), activo:true, notas:'Tiene 6 empleados en obra.', ultimoContacto:A(-2), etiquetas:['Construcción']},
+      {id:'c2', nombre:'Ferretería Núñez Hnos.', tipo:'juridica', ciRut:'21.556.230.0018', telefono:'098771122', email:'nunezhnos@gmail.com', regimen:'iva_irae', honorarioMensual:32000, moneda:'UYU', prioridad:'leve', driveUrl:'https://drive.google.com/drive/folders/ejemplo-nunez', codigoAcceso:'NUNEZ-102', fechaAlta:A(-620), activo:true, notas:'', ultimoContacto:A(-25), etiquetas:['Comercio']},
+      {id:'c3', nombre:'Panadería La Espiga SRL', tipo:'juridica', ciRut:'21.334.881.0014', telefono:'094112233', email:'', regimen:'iva_irae', honorarioMensual:28000, moneda:'UYU', prioridad:'leve', driveUrl:'', codigoAcceso:'ESPIGA-103', fechaAlta:A(-300), activo:true, notas:'', etiquetas:['Gastronomía']},
+      {id:'c4', nombre:'Lucía Ferreira — Diseño Gráfico', tipo:'fisica', ciRut:'4.556.213-4', telefono:'099887766', email:'lucia.dg@gmail.com', regimen:'literal_e', honorarioMensual:12000, moneda:'UYU', prioridad:'leve', driveUrl:'https://drive.google.com/drive/folders/ejemplo-lucia', codigoAcceso:'LUCIA-104', fechaAlta:A(-210), activo:true, notas:'', etiquetas:['Diseño']},
+      {id:'c5', nombre:'Rodrigo Batista — Consultor IT', tipo:'fisica', ciRut:'3.998.221-1', telefono:'091223344', email:'', regimen:'literal_e', honorarioMensual:400, moneda:'USD', prioridad:'urgente', driveUrl:'', codigoAcceso:'RODRIGO-105', fechaAlta:A(-150), activo:true, notas:'Factura en dólares a una empresa de Argentina.', etiquetas:['Tecnología']},
+      {id:'c6', nombre:'Martín Silveira', tipo:'fisica', ciRut:'4.887.001-9', telefono:'098001122', email:'', regimen:'monotributo', honorarioMensual:6000, moneda:'UYU', prioridad:'leve', driveUrl:'', codigoAcceso:'MARTIN-106', fechaAlta:A(-90), activo:true, notas:'Feria vecinal, monotributo social MIDES.', etiquetas:[]},
+      {id:'c7', nombre:'Almacén Doña Rosa', tipo:'fisica', ciRut:'3.556.774-2', telefono:'097665544', email:'', regimen:'monotributo', honorarioMensual:5000, moneda:'UYU', prioridad:'moderada', driveUrl:'', codigoAcceso:'DROSA-107', fechaAlta:A(-800), activo:true, notas:'', etiquetas:['Comercio']},
+      {id:'c8', nombre:'Estudio Fongaro & Asoc.', tipo:'juridica', ciRut:'21.229.556.0013', telefono:'099334455', email:'contacto@fongaro.uy', regimen:'irae_general', honorarioMensual:45000, moneda:'UYU', prioridad:'leve', driveUrl:'https://drive.google.com/drive/folders/ejemplo-fongaro', codigoAcceso:'FONGARO-108', fechaAlta:A(-980), activo:true, notas:'Escritorio de arquitectura, 3 empleados.', etiquetas:[]},
+      {id:'c9', nombre:'Carpintería Bianchi', tipo:'fisica', ciRut:'3.771.204-8', telefono:'096554433', email:'', regimen:'literal_e', honorarioMensual:14000, moneda:'UYU', prioridad:'leve', driveUrl:'', codigoAcceso:'BIANCHI-109', fechaAlta:A(-60), activo:true, notas:'Unipersonal, taller propio.', etiquetas:[]},
+      {id:'c10', nombre:'Verónica Acosta — Traductora', tipo:'fisica', ciRut:'4.221.087-6', telefono:'092334411', email:'', regimen:'literal_e', honorarioMensual:9000, moneda:'UYU', prioridad:'leve', driveUrl:'', codigoAcceso:'VERONICA-110', fechaAlta:A(-40), activo:true, notas:'', etiquetas:[]},
+      {id:'c11', nombre:'Kiosco El Sol', tipo:'fisica', ciRut:'3.667.902-0', telefono:'095112200', email:'', regimen:'monotributo', honorarioMensual:4500, moneda:'UYU', prioridad:'moderada', driveUrl:'', codigoAcceso:'ELSOL-111', fechaAlta:A(-25), activo:true, notas:'', etiquetas:['Comercio']}
     ];
     save(LS.clientes, CLIENTES);
   }
@@ -1050,6 +1337,9 @@
     });
     // trabajo puntual que hace subir un mes por encima del resto
     seed.push({id:uid(), clienteId:'c1', concepto:'Informe de auditoría interna', monto:180000, moneda:'UYU', mesCorrespondiente:mesDe(-60), fechaGeneracion:A(-58), pagos:[{monto:180000, fecha:A(-50), metodo:'Transferencia'}], notas:'', etiqueta:'Auditoría'});
+    // cobro puntual con plan de cuotas, para mostrar el progreso "cuota X de N" (1 de 3 ya pagada)
+    seed.push({id:uid(), clienteId:'c9', concepto:'Regularización societaria — honorario especial', monto:45000, moneda:'UYU', mesCorrespondiente:mesDe(-38), fechaGeneracion:A(-38), pagos:[{monto:15000, fecha:A(-36), metodo:'Transferencia'}], notas:'', etiqueta:'Trabajo especial',
+      cuotas:[{numero:1, fechaPrevista:A(-38), montoPrevisto:15000},{numero:2, fechaPrevista:A(-8), montoPrevisto:15000},{numero:3, fechaPrevista:A(22), montoPrevisto:15000}]});
     COBROS = seed;
     save(LS.cobros, COBROS);
   }
@@ -1057,10 +1347,10 @@
   if(!TAREAS){
     const A = (n) => addDaysISO(hoyISO(), n);
     TAREAS = [
-      {id:uid(), fecha:A(1), titulo:'Preparar documentación IVA', notas:'Falta la factura de compra de octubre.', clienteId:'c1', hecha:false, creada:hoyISO()},
-      {id:uid(), fecha:A(2), titulo:'Llamar a prospecto — panadería de barrio', notas:'Vino recomendado por Panadería La Espiga.', clienteId:null, hecha:false, creada:hoyISO()},
-      {id:uid(), fecha:A(-1), titulo:'Enviar certificado único a Ferretería', notas:'', clienteId:'c2', hecha:true, creada:A(-3)},
-      {id:uid(), fecha:A(4), titulo:'Revisar liquidación de sueldos de Fongaro', notas:'Confirmar aguinaldo.', clienteId:'c8', hecha:false, creada:hoyISO()}
+      {id:uid(), fecha:A(1), titulo:'Preparar documentación IVA', notas:'Falta la factura de compra de octubre.', clienteId:'c1', hora:'14:30', hecha:false, creada:hoyISO()},
+      {id:uid(), fecha:A(2), titulo:'Llamar a prospecto — panadería de barrio', notas:'Vino recomendado por Panadería La Espiga.', clienteId:null, hora:null, hecha:false, creada:hoyISO()},
+      {id:uid(), fecha:A(-1), titulo:'Enviar certificado único a Ferretería', notas:'', clienteId:'c2', hora:null, hecha:true, creada:A(-3)},
+      {id:uid(), fecha:A(4), titulo:'Revisar liquidación de sueldos de Fongaro', notas:'Confirmar aguinaldo.', clienteId:'c8', hora:null, hecha:false, creada:hoyISO()}
     ];
     save(LS.tareas, TAREAS);
   }
@@ -1156,6 +1446,68 @@
   }
   function regTag(regimen){
     return `<span class="reg-tag"><span class="dot" style="background:${REGIMEN_COLOR[regimen]}"></span>${REGIMEN_LABEL[regimen]}</span>`;
+  }
+
+  /* ---------------- cuotas ---------------- */
+  function progresoCuotas(cobro){
+    if(!cobro.cuotas || !cobro.cuotas.length) return null;
+    const totalCobrado = cobro.pagos.reduce((s,p) => s + p.monto, 0);
+    let acumulado = 0, actual = 0;
+    for(const cu of cobro.cuotas){
+      acumulado += cu.montoPrevisto;
+      if(totalCobrado + 0.01 >= acumulado) actual++;
+    }
+    return { actual, total: cobro.cuotas.length };
+  }
+  function montoProximaCuota(cobro){
+    const p = progresoCuotas(cobro);
+    if(!p || p.actual >= p.total) return null;
+    return cobro.cuotas[p.actual].montoPrevisto;
+  }
+  function botonCuotaHtml(cobro){
+    const monto = montoProximaCuota(cobro);
+    if(monto == null) return '';
+    const p = progresoCuotas(cobro);
+    return `<button class="btn btn-sm btn-outline" data-pagar-cuota="${cobro.id}" type="button">Cuota ${p.actual+1} cobrada</button>`;
+  }
+  function registrarPagoCuota(cobroId){
+    const c = COBROS.find(x => x.id === cobroId);
+    const monto = c ? montoProximaCuota(c) : null;
+    if(monto == null) return;
+    c.pagos.push({monto, fecha: hoyISO(), metodo:'Transferencia'});
+    persistAll();
+  }
+  function chipCuotas(cobro){
+    const p = progresoCuotas(cobro);
+    if(!p) return '';
+    const completo = p.actual >= p.total;
+    return `<span class="chip ${completo?'chip--good':'chip--neutral'}" title="Plan de ${p.total} cuotas">Cuota ${p.actual} de ${p.total}</span>`;
+  }
+  function generarCuotas(monto, fechaInicioISO, cantidad){
+    const porCuota = Math.round(monto / cantidad);
+    const cuotas = [];
+    for(let i=0;i<cantidad;i++){
+      const esUltima = i === cantidad-1;
+      cuotas.push({ numero:i+1, fechaPrevista: addDaysISO(fechaInicioISO, 30*i), montoPrevisto: esUltima ? (monto - porCuota*(cantidad-1)) : porCuota });
+    }
+    return cuotas;
+  }
+
+  /* ---------------- código de acceso al portal ---------------- */
+  function generarCodigoAcceso(nombre){
+    return (nombre.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z]/g,'').toUpperCase().slice(0,8) || 'CLIENTE') + '-' + Math.floor(100+Math.random()*900);
+  }
+
+  /* ---------------- WhatsApp: resumen de estado de cuenta ---------------- */
+  function mensajeEstadoCuenta(c){
+    const propios = COBROS.filter(co => co.clienteId === c.id);
+    const pendientes = propios.filter(co => estadoCobro(co) !== 'cobrado');
+    const totalPend = pendientes.reduce((s,co) => s + pendienteDe(co), 0);
+    const linkPortal = `${location.origin}${location.pathname}#portal`;
+    const partePendiente = pendientes.length
+      ? `Tenés un pendiente de ${fmtMoneda(totalPend, c.moneda)} (${pendientes.length} concepto${pendientes.length>1?'s':''}).`
+      : 'Estás al día con tus honorarios, sin pendientes. 🎉';
+    return `Hola ${c.nombre}! Te paso el resumen de tu cuenta con nosotros. ${partePendiente} Podés ver el detalle en nuestro portal: ${linkPortal} — con tu código de acceso: ${c.codigoAcceso}. Cualquier consulta quedo atento/a. ¡Gracias!`;
   }
 
   function mensajeContextualCliente(c){
@@ -1326,13 +1678,16 @@
   /* ---------------- render: panel ---------------- */
   function tareasHoyOAtrasadas(){ return TAREAS.filter(t => !t.hecha && t.fecha <= hoyISO()); }
   function tareasProximos7Dias(){ const limite = addDaysISO(hoyISO(),7); return TAREAS.filter(t => !t.hecha && t.fecha > hoyISO() && t.fecha <= limite); }
+  function tareasVencidas(){ return TAREAS.filter(t => !t.hecha && t.fecha < hoyISO()); }
+  function tareasDeHoy(){ return TAREAS.filter(t => !t.hecha && t.fecha === hoyISO()); }
 
   function renderPanel(){
     const cobradoMes = cobradoEnMesPorMoneda(hoyISO().slice(0,7));
     const pendiente = pendienteTotalPorMoneda();
     const vencs = vencimientosActivos();
     const urgentes = vencs.filter(v => v.estado !== 'aldia').length;
-    const tareasUrgentes = tareasHoyOAtrasadas().length;
+    const tareasVenc = tareasVencidas().length;
+    const tareasHoyN = tareasDeHoy().length;
     const tareasProximas = tareasProximos7Dias().length;
 
     const usdLine = (obj) => obj.USD > 0 ? `<div class="stat-sub mono">+ ${fmtMoneda(obj.USD,'USD')} <span style="color:var(--ink-faint); font-weight:400;">(≈ ${fmtMoneda(montoEnUYU(obj.USD,'USD'),'UYU')} al TC ref.)</span></div>` : '';
@@ -1341,7 +1696,14 @@
       <div class="stat-tile"><div class="stat-label">Tus honorarios cobrados este mes</div><div class="stat-value">${fmtMoneda(cobradoMes.UYU,'UYU')}</div>${usdLine(cobradoMes)}<div class="stat-sub">pagos con fecha del mes en curso</div></div>
       <div class="stat-tile"><div class="stat-label">Tus honorarios pendientes</div><div class="stat-value">${fmtMoneda(pendiente.UYU,'UYU')}</div>${usdLine(pendiente)}<div class="stat-sub">entre todos los cobros abiertos</div></div>
       <div class="stat-tile clickable" id="tile-vencimientos" title="Ver la lista más abajo"><div class="stat-label">Vencimientos urgentes</div><div class="stat-value">${urgentes}</div><div class="stat-sub">próximos o vencidos</div></div>
-      <div class="stat-tile clickable" id="tile-tareas" title="Ir a la Agenda"><div class="stat-label">Tareas pendientes</div><div class="stat-value">${tareasUrgentes}</div><div class="stat-sub">${tareasProximas ? `hoy o atrasadas · +${tareasProximas} próximas` : 'hoy o atrasadas'}</div></div>
+      <div class="stat-tile clickable" id="tile-tareas" title="Ir a la Agenda">
+        <div class="stat-label">Tareas pendientes</div>
+        <div style="display:flex; gap:16px; margin-top:6px;">
+          <div><div class="stat-value" style="font-size:19px; ${tareasVenc?'color:var(--critical);':''}">${tareasVenc}</div><div class="stat-sub">Vencidas</div></div>
+          <div><div class="stat-value" style="font-size:19px; ${tareasHoyN?'color:var(--warn);':''}">${tareasHoyN}</div><div class="stat-sub">Hoy</div></div>
+          <div><div class="stat-value" style="font-size:19px; color:var(--ink-faint);">${tareasProximas}</div><div class="stat-sub">Próx. 7d</div></div>
+        </div>
+      </div>
     `;
 
     renderChartCobrado();
@@ -1375,6 +1737,9 @@
 
   /* ---------------- render: clientes ---------------- */
   let sortClientes = {key:null, dir:1};
+  let mostrarClientesCerrados = false;
+  let modoSeleccionClientes = false;
+  const clientesSeleccionados = new Set();
   function ordenarClientes(lista){
     if(!sortClientes.key) return lista;
     const dir = sortClientes.dir;
@@ -1387,28 +1752,128 @@
     };
     return lista.slice().sort((a,b) => dir * cmp[sortClientes.key](a,b));
   }
+  function clientesFiltradosActuales(){
+    const q = normalizarTexto(($('#buscar-cliente').value||'').trim());
+    let base = CLIENTES.filter(c => mostrarClientesCerrados ? c.activo===false : c.activo!==false);
+    if(q){
+      base = base.filter(c =>
+        normalizarTexto(c.nombre).includes(q) ||
+        normalizarTexto(c.ciRut).includes(q) ||
+        normalizarTexto(c.telefono).includes(q) ||
+        normalizarTexto(c.notas).includes(q) ||
+        (c.etiquetas||[]).some(e => normalizarTexto(e).includes(q)) ||
+        COBROS.some(co => co.clienteId===c.id && normalizarTexto(co.concepto).includes(q))
+      );
+    }
+    return base;
+  }
   function renderClientes(){
-    const q = ($('#buscar-cliente').value||'').toLowerCase().trim();
-    let filtrados = CLIENTES.filter(c => !q || c.nombre.toLowerCase().includes(q) || c.ciRut.toLowerCase().includes(q));
-    filtrados = ordenarClientes(filtrados);
+    let filtrados = ordenarClientes(clientesFiltradosActuales());
+    const colspan = modoSeleccionClientes ? 8 : 7;
     $('#tbody-clientes').innerHTML = filtrados.map(c => {
       const peor = peorEstadoCliente(c.id);
+      const etiquetasHtml = (c.etiquetas&&c.etiquetas.length) ? `<div style="margin-top:3px; display:flex; gap:4px; flex-wrap:wrap;">${c.etiquetas.map(e=>`<span class="chip chip--neutral">${esc(e)}</span>`).join('')}</div>` : '';
+      const cerradoBadge = c.activo===false ? `<span class="chip chip--neutral" style="margin-left:6px;">Cerrado</span>` : '';
+      const checkTd = modoSeleccionClientes ? `<td onclick="event.stopPropagation()"><input type="checkbox" class="chk-cliente" data-id="${c.id}" ${clientesSeleccionados.has(c.id)?'checked':''}></td>` : '';
       return `<tr class="clickable" data-id="${c.id}">
-        <td><div class="cell-name">${esc(c.nombre)} ${c.driveUrl ? `<a class="folder-link" href="${esc(c.driveUrl)}" target="_blank" rel="noopener" title="Abrir carpeta digital" onclick="event.stopPropagation()">${folderIcon}</a>` : ''}</div><div class="cell-faint">${esc(c.ciRut)}</div></td>
+        ${checkTd}
+        <td><div class="cell-name">${esc(c.nombre)}${cerradoBadge} ${c.driveUrl ? `<a class="folder-link" href="${esc(c.driveUrl)}" target="_blank" rel="noopener" title="Abrir carpeta digital" onclick="event.stopPropagation()">${folderIcon}</a>` : ''}</div><div class="cell-faint">${esc(c.ciRut)}</div>${etiquetasHtml}</td>
         <td>${regTag(c.regimen)}</td>
         <td><span class="reg-tag"><span class="dot" style="background:${PRIORIDAD_COLOR[c.prioridad||'leve']}"></span>${PRIORIDAD_LABEL[c.prioridad||'leve']}</span></td>
         <td>${esc(c.telefono)}</td>
         <td class="num">${fmtMoneda(c.honorarioMensual, c.moneda)}</td>
         <td>${peor ? chipVencimiento(peor.estado, peor.dias) : '<span class="chip chip--neutral">Sin obligaciones</span>'}</td>
-        <td>
+        <td style="white-space:nowrap;">
+          <button type="button" class="btn btn-sm btn-outline" data-tarea-cliente="${c.id}" onclick="event.stopPropagation()" title="Ir a la Agenda y cargar una tarea de hoy para este cliente">+ Tarea</button>
           <a class="btn btn-sm btn-wa" target="_blank" rel="noopener" data-wa-cliente="${c.id}" href="${waLink(c.telefono, mensajeContextualCliente(c))}" onclick="event.stopPropagation()" title="Abre WhatsApp con un mensaje ya armado según el estado del cliente (vencimiento urgente, cobro pendiente, o saludo si está todo al día)">WhatsApp</a>
           <div class="cell-faint" style="margin-top:3px; white-space:nowrap;">${fmtUltimoContacto(c.ultimoContacto)}</div>
         </td>
       </tr>`;
-    }).join('') || `<tr><td colspan="7"><div class="empty-state">Sin resultados.</div></td></tr>`;
+    }).join('') || `<tr><td colspan="${colspan}"><div class="empty-state">Sin resultados.</div></td></tr>`;
 
-    $$('#tbody-clientes tr[data-id]').forEach(tr => tr.addEventListener('click', () => abrirFichaCliente(tr.dataset.id)));
+    $$('#tbody-clientes tr[data-id]').forEach(tr => tr.addEventListener('click', () => {
+      if(modoSeleccionClientes){
+        const id = tr.dataset.id;
+        if(clientesSeleccionados.has(id)) clientesSeleccionados.delete(id); else clientesSeleccionados.add(id);
+        renderClientes();
+      } else {
+        abrirFichaCliente(tr.dataset.id);
+      }
+    }));
+    $$('#tbody-clientes .chk-cliente').forEach(chk => chk.addEventListener('change', () => {
+      if(chk.checked) clientesSeleccionados.add(chk.dataset.id); else clientesSeleccionados.delete(chk.dataset.id);
+      actualizarBarraSeleccionClientes();
+    }));
+    $$('#tbody-clientes [data-tarea-cliente]').forEach(b => b.addEventListener('click', () => agregarTareaParaCliente(b.dataset.tareaCliente)));
+    actualizarBarraSeleccionClientes();
+    actualizarLabelVerCerrados();
+    const todasEtiquetas = Array.from(new Set(CLIENTES.flatMap(c => c.etiquetas||[])));
+    $('#lista-etiquetas-lote-datalist').innerHTML = todasEtiquetas.map(e => `<option value="${esc(e)}"></option>`).join('');
   }
+
+  function actualizarBarraSeleccionClientes(){
+    const n = clientesSeleccionados.size;
+    $('#txt-seleccion-clientes').textContent = n ? `${n} seleccionado${n>1?'s':''}` : 'Ningún cliente seleccionado';
+    $('#btn-cerrar-lote').textContent = mostrarClientesCerrados ? 'Reabrir seleccionados' : 'Cerrar seleccionados';
+  }
+  $('#btn-modo-seleccion').addEventListener('click', () => {
+    modoSeleccionClientes = !modoSeleccionClientes;
+    clientesSeleccionados.clear();
+    $('#th-check-clientes').style.display = modoSeleccionClientes ? '' : 'none';
+    $('#barra-seleccion-clientes').style.display = modoSeleccionClientes ? 'block' : 'none';
+    $('#btn-modo-seleccion').textContent = modoSeleccionClientes ? '✕ Cancelar selección' : '✏️ Seleccionar';
+    renderClientes();
+  });
+  $('#btn-cancelar-seleccion').addEventListener('click', () => $('#btn-modo-seleccion').click());
+  $('#chk-todos-clientes').addEventListener('change', (e) => {
+    clientesFiltradosActuales().forEach(c => { if(e.target.checked) clientesSeleccionados.add(c.id); else clientesSeleccionados.delete(c.id); });
+    renderClientes();
+  });
+  $('#btn-aplicar-prioridad-lote').addEventListener('click', () => {
+    if(!clientesSeleccionados.size) return;
+    const prioridad = $('#sel-prioridad-lote').value;
+    const n = clientesSeleccionados.size;
+    clientesSeleccionados.forEach(id => { const c = clienteById(id); if(c) c.prioridad = prioridad; });
+    persistAll();
+    renderClientes();
+    mostrarToast(`Prioridad "${PRIORIDAD_LABEL[prioridad]}" aplicada a ${n} cliente(s).`);
+  });
+  $('#btn-agregar-etiqueta-lote').addEventListener('click', () => {
+    if(!clientesSeleccionados.size) return;
+    const val = $('#input-etiqueta-lote').value.trim();
+    if(!val) return;
+    const n = clientesSeleccionados.size;
+    clientesSeleccionados.forEach(id => {
+      const c = clienteById(id);
+      if(!c) return;
+      c.etiquetas = c.etiquetas || [];
+      if(!c.etiquetas.some(e => e.toLowerCase()===val.toLowerCase())) c.etiquetas.push(val);
+    });
+    persistAll();
+    $('#input-etiqueta-lote').value = '';
+    renderClientes();
+    mostrarToast(`Etiqueta "${val}" agregada a ${n} cliente(s).`);
+  });
+  $('#btn-cerrar-lote').addEventListener('click', () => {
+    if(!clientesSeleccionados.size) return;
+    const nuevoActivo = mostrarClientesCerrados;
+    const n = clientesSeleccionados.size;
+    clientesSeleccionados.forEach(id => { const c = clienteById(id); if(c) c.activo = nuevoActivo; });
+    persistAll();
+    clientesSeleccionados.clear();
+    renderClientes();
+    mostrarToast(`${n} cliente(s) ${nuevoActivo ? 'reabierto(s)' : 'cerrado(s)'}.`);
+  });
+  function actualizarLabelVerCerrados(){
+    const n = CLIENTES.filter(c => c.activo===false).length;
+    $('#btn-ver-cerrados').textContent = mostrarClientesCerrados ? `Ver clientes activos` : `Ver clientes cerrados (${n})`;
+  }
+  $('#btn-ver-cerrados').addEventListener('click', () => {
+    mostrarClientesCerrados = !mostrarClientesCerrados;
+    clientesSeleccionados.clear();
+    actualizarLabelVerCerrados();
+    renderClientes();
+  });
 
   /* ---------------- render: prospectos ---------------- */
   let filtroProspectos = 'todos';
@@ -1428,6 +1893,7 @@
         <td style="white-space:nowrap;">
           ${p.telefono ? `<a class="btn btn-sm btn-wa" target="_blank" rel="noopener" href="${waLink(p.telefono, `Hola ${p.nombre}! Te escribo del estudio contable, ¿cómo estás?`)}">WhatsApp</a>` : ''}
           <button class="btn btn-sm btn-outline" data-convertir="${p.id}" type="button">Convertir a cliente</button>
+          <button class="btn btn-ghost btn-sm" data-eliminar-prospecto="${p.id}" type="button" title="Eliminar prospecto">✕</button>
         </td>
       </tr>`).join('') : `<tr><td colspan="4"><div class="empty-state">No hay prospectos en este filtro.</div></td></tr>`;
 
@@ -1442,6 +1908,13 @@
       persistAll();
       renderProspectos();
       abrirNuevoCliente({nombre:p.nombre, telefono:p.telefono, notas:p.origen ? `Prospecto convertido — origen: ${p.origen}` : ''});
+    }));
+    $$('#tbody-prospectos [data-eliminar-prospecto]').forEach(btn => btn.addEventListener('click', () => {
+      const p = PROSPECTOS.find(x => x.id === btn.dataset.eliminarProspecto);
+      if(!p || !confirm(`¿Eliminar el prospecto "${p.nombre}"?`)) return;
+      PROSPECTOS = PROSPECTOS.filter(x => x.id !== p.id);
+      persistAll();
+      renderProspectos();
     }));
   }
   $('#btn-nuevo-prospecto').addEventListener('click', () => {
@@ -1504,28 +1977,179 @@
     $('#filtro-etiqueta').innerHTML = `<option value="">Todas las etiquetas</option>` + unicas.map(e => `<option value="${esc(e)}">${esc(e)}</option>`).join('');
     $('#filtro-etiqueta').value = filtroEtiqueta;
   }
+  let vistaCobros = 'tramite';
+  const personasCobrosAbiertas = new Set();
+  let modoSeleccionCobros = false;
+  const cobrosSeleccionados = new Set();
+  let cobrosFiltradosActuales = [];
+
   function renderCobros(){
     poblarFiltroEtiquetas();
     let lista = COBROS.slice();
     if(filtroCobros !== 'todos') lista = lista.filter(c => estadoCobro(c) === filtroCobros);
     if(filtroEtiqueta) lista = lista.filter(c => c.etiqueta === filtroEtiqueta);
     lista = ordenarCobros(lista);
+    cobrosFiltradosActuales = lista;
+    const colspan = modoSeleccionCobros ? 8 : 7;
     $('#tbody-cobros').innerHTML = lista.map(c => {
       const cli = clienteById(c.clienteId);
       const pend = pendienteDe(c);
+      const checkTd = modoSeleccionCobros ? `<td><input type="checkbox" class="chk-cobro" data-id="${c.id}" ${cobrosSeleccionados.has(c.id)?'checked':''}></td>` : '';
       return `<tr>
+        ${checkTd}
         <td class="cell-name">${esc(cli?cli.nombre:'—')}</td>
         <td>${esc(c.concepto)}${c.etiqueta ? `<div style="margin-top:3px;"><span class="chip chip--neutral">${esc(c.etiqueta)}</span></div>` : ''}</td>
         <td class="cell-faint">${fmtMes(c.mesCorrespondiente+'-01')}</td>
         <td class="num">${fmtMoneda(c.monto, c.moneda)}</td>
         <td class="num">${pend>0 ? fmtMoneda(pend, c.moneda) : '—'}</td>
-        <td>${chipCobro(estadoCobro(c))}</td>
-        <td><button class="btn btn-sm btn-outline" data-pago="${c.id}" ${pend<=0?'disabled':''}>Registrar pago</button></td>
+        <td>${chipCobro(estadoCobro(c))} ${chipCuotas(c)}</td>
+        <td style="white-space:nowrap;"><button class="btn btn-sm btn-outline" data-pago="${c.id}" ${pend<=0?'disabled':''}>Registrar pago</button> ${botonCuotaHtml(c)} <button class="btn btn-ghost btn-sm" data-editar-cobro="${c.id}" title="Editar trámite / cuotas">✏️</button></td>
       </tr>`;
-    }).join('') || `<tr><td colspan="7"><div class="empty-state">No hay cobros en este filtro.</div></td></tr>`;
+    }).join('') || `<tr><td colspan="${colspan}"><div class="empty-state">No hay cobros en este filtro.</div></td></tr>`;
 
     $$('#tbody-cobros [data-pago]').forEach(btn => btn.addEventListener('click', () => abrirModalPago(btn.dataset.pago)));
+    $$('#tbody-cobros [data-pagar-cuota]').forEach(btn => btn.addEventListener('click', () => { registrarPagoCuota(btn.dataset.pagarCuota); renderCobros(); if($('.view[data-view="panel"]').classList.contains('active')) renderPanel(); }));
+    $$('#tbody-cobros [data-editar-cobro]').forEach(btn => btn.addEventListener('click', () => abrirModalEditarCobro(btn.dataset.editarCobro)));
+    $$('#tbody-cobros .chk-cobro').forEach(chk => chk.addEventListener('change', () => {
+      if(chk.checked) cobrosSeleccionados.add(chk.dataset.id); else cobrosSeleccionados.delete(chk.dataset.id);
+      actualizarBarraSeleccionCobros();
+    }));
+    actualizarBarraSeleccionCobros();
+
+    renderCobrosPorPersona();
+    $('#vista-cobros-tramite').style.display = vistaCobros==='tramite' ? '' : 'none';
+    $('#vista-cobros-persona').style.display = vistaCobros==='persona' ? '' : 'none';
+    $('#datalist-clientes-cobro').innerHTML = CLIENTES.filter(c=>c.activo!==false).map(c => `<option value="${esc(c.nombre)}"></option>`).join('');
+    if(!$('#nc-fecha').value) $('#nc-fecha').value = hoyISO();
   }
+
+  function cobrosAgrupadosPorPersona(){
+    let lista = COBROS.slice();
+    if(filtroCobros !== 'todos') lista = lista.filter(c => estadoCobro(c) === filtroCobros);
+    if(filtroEtiqueta) lista = lista.filter(c => c.etiqueta === filtroEtiqueta);
+    const porCliente = {};
+    lista.forEach(c => { (porCliente[c.clienteId] = porCliente[c.clienteId] || []).push(c); });
+    return Object.keys(porCliente).map(clienteId => {
+      const cobros = porCliente[clienteId].sort((a,b)=>b.mesCorrespondiente.localeCompare(a.mesCorrespondiente));
+      const pendienteTotal = cobros.reduce((s,c)=>s+montoEnUYU(pendienteDe(c),c.moneda),0);
+      const pendientesN = cobros.filter(c=>estadoCobro(c)!=='cobrado').length;
+      return { clienteId, cliente: clienteById(clienteId), cobros, pendienteTotal, pendientesN };
+    }).filter(g => g.cliente).sort((a,b) => b.pendienteTotal - a.pendienteTotal);
+  }
+
+  function renderCobrosPorPersona(){
+    const grupos = cobrosAgrupadosPorPersona();
+    $('#lista-cobros-persona').innerHTML = grupos.length ? grupos.map(g => `
+      <div class="list-row" data-toggle-persona="${g.clienteId}" style="cursor:pointer;">
+        <div class="list-main"><span class="list-title">${esc(g.cliente.nombre)}</span><span class="list-sub">${g.cobros.length} cobro(s) · ${g.pendientesN} pendiente(s)</span></div>
+        <div class="list-side"><span class="mono">${fmtMoneda(g.pendienteTotal,'UYU')}</span><span class="chev" style="margin-left:6px; display:inline-block; transition:transform .15s;">⌄</span></div>
+      </div>
+      <div class="collapse-body" id="persona-detalle-${g.clienteId}">
+        ${g.cobros.map(c => {
+          const pend = pendienteDe(c);
+          return `<div class="list-row" style="padding-left:14px;">
+            <div class="list-main"><span class="list-title">${esc(c.concepto)}</span><span class="list-sub">${fmtMes(c.mesCorrespondiente+'-01')}${c.etiqueta?` · ${esc(c.etiqueta)}`:''}</span></div>
+            <div class="list-side" style="gap:8px;">
+              <span class="mono">${fmtMoneda(pend>0?pend:c.monto, c.moneda)}</span>
+              ${chipCobro(estadoCobro(c))} ${chipCuotas(c)}
+              <button class="btn btn-sm btn-outline" data-pago-persona="${c.id}" ${pend<=0?'disabled':''}>Registrar pago</button>
+              ${botonCuotaHtml(c).replace('data-pagar-cuota', 'data-pagar-cuota-persona')}
+              <button class="btn btn-ghost btn-sm" data-editar-cobro-persona="${c.id}" title="Editar trámite / cuotas">✏️</button>
+              ${g.cliente.telefono ? `<a class="btn btn-sm btn-wa" target="_blank" rel="noopener" data-wa-cliente="${g.clienteId}" href="${waLink(g.cliente.telefono, mensajeContextualCliente(g.cliente))}">WhatsApp</a>` : ''}
+            </div>
+          </div>`;
+        }).join('')}
+        <div style="padding:8px 14px 4px;"><button type="button" class="btn btn-ghost btn-sm" data-ver-ficha="${g.clienteId}">Ver ficha completa del cliente →</button></div>
+      </div>
+    `).join('') : `<div class="empty-state">No hay cobros en este filtro.</div>`;
+
+    $$('#lista-cobros-persona [data-toggle-persona]').forEach(row => row.addEventListener('click', () => {
+      const id = row.dataset.togglePersona;
+      const body = document.getElementById('persona-detalle-'+id);
+      const abierto = body.classList.toggle('open');
+      row.querySelector('.chev').style.transform = abierto ? 'rotate(180deg)' : '';
+      if(abierto) personasCobrosAbiertas.add(id); else personasCobrosAbiertas.delete(id);
+    }));
+    personasCobrosAbiertas.forEach(id => {
+      const body = document.getElementById('persona-detalle-'+id);
+      if(body) body.classList.add('open');
+    });
+    $$('#lista-cobros-persona [data-pago-persona]').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); abrirModalPago(btn.dataset.pagoPersona); }));
+    $$('#lista-cobros-persona [data-pagar-cuota-persona]').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); registrarPagoCuota(btn.dataset.pagarCuotaPersona); renderCobros(); }));
+    $$('#lista-cobros-persona [data-editar-cobro-persona]').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); abrirModalEditarCobro(btn.dataset.editarCobroPersona); }));
+    $$('#lista-cobros-persona [data-ver-ficha]').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); irA('clientes'); abrirFichaCliente(btn.dataset.verFicha); }));
+  }
+  $$('#vista-cobros-toggle button').forEach(b => b.addEventListener('click', () => {
+    vistaCobros = b.dataset.v;
+    $$('#vista-cobros-toggle button').forEach(x => x.classList.toggle('active', x===b));
+    renderCobros();
+  }));
+  $('#btn-guardar-nuevo-cobro').addEventListener('click', () => {
+    const nombreTexto = $('#nc-cliente').value.trim();
+    const cliente = CLIENTES.find(c => c.nombre.toLowerCase() === nombreTexto.toLowerCase());
+    if(!cliente){
+      $('#nc-cliente').style.borderColor = 'var(--critical)';
+      $('#nc-error').textContent = 'Elegí un cliente de la lista antes de agregar el cobro.';
+      $('#nc-error').style.display = 'block';
+      $('#nc-cliente').focus();
+      return;
+    }
+    $('#nc-cliente').style.borderColor = '';
+    $('#nc-error').style.display = 'none';
+    const concepto = $('#nc-concepto').value.trim();
+    const monto = Number($('#nc-monto').value) || 0;
+    const fecha = $('#nc-fecha').value || hoyISO();
+    if(!concepto || monto<=0){ $('#nc-concepto').focus(); return; }
+    COBROS.push({id:uid(), clienteId:cliente.id, concepto, monto, moneda:$('#nc-moneda').value, mesCorrespondiente:fecha.slice(0,7), fechaGeneracion:fecha, pagos:[], notas:'', etiqueta:'', cuotas:[]});
+    persistAll();
+    $('#nc-cliente').value=''; $('#nc-concepto').value=''; $('#nc-monto').value='';
+    renderCobros();
+    if($('.view[data-view="panel"]').classList.contains('active')) renderPanel();
+    mostrarToast(`Cobro agregado para ${cliente.nombre}.`);
+  });
+
+  function actualizarBarraSeleccionCobros(){
+    const n = cobrosSeleccionados.size;
+    $('#txt-seleccion-cobros').textContent = n ? `${n} seleccionado(s)` : 'Ningún cobro seleccionado';
+  }
+  $('#btn-modo-seleccion-cobros').addEventListener('click', () => {
+    modoSeleccionCobros = !modoSeleccionCobros;
+    cobrosSeleccionados.clear();
+    $('#th-check-cobros').style.display = modoSeleccionCobros ? '' : 'none';
+    $('#barra-seleccion-cobros').style.display = modoSeleccionCobros ? 'block' : 'none';
+    $('#btn-modo-seleccion-cobros').textContent = modoSeleccionCobros ? '✕ Cancelar selección' : '✏️ Seleccionar';
+    renderCobros();
+  });
+  $('#btn-cancelar-seleccion-cobros').addEventListener('click', () => $('#btn-modo-seleccion-cobros').click());
+  $('#chk-todos-cobros').addEventListener('change', (e) => {
+    cobrosFiltradosActuales.forEach(c => { if(e.target.checked) cobrosSeleccionados.add(c.id); else cobrosSeleccionados.delete(c.id); });
+    renderCobros();
+  });
+  $('#btn-marcar-cobrado-lote').addEventListener('click', () => {
+    if(!cobrosSeleccionados.size) return;
+    const n = cobrosSeleccionados.size;
+    cobrosSeleccionados.forEach(id => {
+      const c = COBROS.find(x => x.id === id);
+      const pend = c ? pendienteDe(c) : 0;
+      if(c && pend > 0) c.pagos.push({monto:pend, fecha:hoyISO(), metodo:'Transferencia'});
+    });
+    persistAll();
+    cobrosSeleccionados.clear();
+    renderCobros();
+    if($('.view[data-view="panel"]').classList.contains('active')) renderPanel();
+    mostrarToast(`${n} cobro(s) marcado(s) como cobrado(s).`);
+  });
+  $('#btn-eliminar-cobro-lote').addEventListener('click', () => {
+    if(!cobrosSeleccionados.size) return;
+    const n = cobrosSeleccionados.size;
+    if(!confirm(`¿Eliminar ${n} cobro(s) seleccionado(s)? Esta acción no se puede deshacer.`)) return;
+    COBROS = COBROS.filter(c => !cobrosSeleccionados.has(c.id));
+    persistAll();
+    cobrosSeleccionados.clear();
+    renderCobros();
+    if($('.view[data-view="panel"]').classList.contains('active')) renderPanel();
+    mostrarToast(`${n} cobro(s) eliminado(s).`);
+  });
 
   /* ---------------- navegación ---------------- */
   function irA(view){
@@ -1537,6 +2161,7 @@
     if(view==='obligaciones') renderObligaciones();
     if(view==='cobros') renderCobros();
     if(view==='agenda') renderAgenda();
+    if(view==='finanzas') renderFinanzas();
   }
   $$('#navrail button').forEach(b => b.addEventListener('click', () => irA(b.dataset.view)));
 
@@ -1552,11 +2177,77 @@
   /* ---------------- ficha / alta de cliente ---------------- */
   let clienteEnEdicion = null;
 
+  function renderCodigoPortalCliente(c){
+    $('#mc-sub').innerHTML = 'Cliente desde ' + fmtFecha(c.fechaAlta) +
+      ` · Código del portal: <span class="mono" style="font-weight:600;">${esc(c.codigoAcceso)}</span> ` +
+      `<button type="button" class="btn btn-ghost btn-sm" id="btn-regenerar-codigo" style="padding:2px 6px;" title="Genera un código nuevo e invalida el anterior de inmediato">↻ Regenerar</button>` +
+      `<button type="button" class="btn btn-ghost btn-sm" id="btn-copiar-link-portal" style="padding:2px 6px;" title="Copia el link del portal y el código de acceso al portapapeles">⧉ Copiar link</button>` +
+      (c.telefono ? ` <a class="btn btn-sm btn-wa" target="_blank" rel="noopener" href="${waLink(c.telefono, mensajeEstadoCuenta(c))}" title="Manda por WhatsApp el resumen de estado de cuenta, con el link y el código del portal">Enviar estado de cuenta</a>` : '') +
+      (c.driveUrl ? ` · <a class="folder-link" href="${esc(c.driveUrl)}" target="_blank" rel="noopener">${folderIcon}Carpeta digital</a>` : '');
+    $('#btn-regenerar-codigo').addEventListener('click', () => {
+      if(!confirm('¿Regenerar el código de acceso? El código anterior deja de funcionar de inmediato.')) return;
+      c.codigoAcceso = generarCodigoAcceso(c.nombre);
+      persistAll();
+      renderCodigoPortalCliente(c);
+    });
+    $('#btn-copiar-link-portal').addEventListener('click', () => {
+      const texto = `Portal: ${location.origin}${location.pathname}#portal — Código de acceso: ${c.codigoAcceso}`;
+      const avisar = () => mostrarToast('Link del portal copiado.');
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(texto).then(avisar).catch(() => alert(texto));
+      } else {
+        alert(texto);
+      }
+    });
+  }
+
+  function actualizarBotonCerrarReabrir(c){
+    const btn = $('#btn-cerrar-reabrir-cliente');
+    btn.style.display = 'inline-flex';
+    btn.textContent = c.activo===false ? '↺ Reabrir cliente' : '🗄️ Cerrar cliente';
+    btn.onclick = () => {
+      c.activo = c.activo===false ? true : false;
+      persistAll();
+      actualizarBotonCerrarReabrir(c);
+      renderClientes();
+    };
+  }
+
+  function renderEtiquetasCliente(clienteId){
+    const c = clienteById(clienteId);
+    $('#lista-etiquetas-cliente').innerHTML = (c.etiquetas&&c.etiquetas.length) ? c.etiquetas.map(e => `
+      <span class="chip chip--neutral">${esc(e)} <button type="button" data-quitar-etiqueta="${esc(e)}" style="background:none;border:none;cursor:pointer;color:inherit;padding:0 0 0 4px;font-weight:700;">✕</button></span>
+    `).join('') : `<span class="field-help">Sin etiquetas todavía.</span>`;
+    $$('#lista-etiquetas-cliente [data-quitar-etiqueta]').forEach(b => b.addEventListener('click', () => {
+      c.etiquetas = (c.etiquetas||[]).filter(e => e !== b.dataset.quitarEtiqueta);
+      persistAll();
+      renderEtiquetasCliente(clienteId);
+      renderClientes();
+    }));
+    const todas = Array.from(new Set(CLIENTES.flatMap(x => x.etiquetas||[])));
+    $('#lista-etiquetas-cliente-datalist').innerHTML = todas.map(e => `<option value="${esc(e)}"></option>`).join('');
+  }
+  $('#btn-agregar-etiqueta-cliente').addEventListener('click', () => {
+    if(!clienteEnEdicion) return;
+    const c = clienteById(clienteEnEdicion);
+    const val = $('#fcl-etiqueta').value.trim();
+    if(!val) return;
+    c.etiquetas = c.etiquetas || [];
+    if(!c.etiquetas.some(e => e.toLowerCase()===val.toLowerCase())) c.etiquetas.push(val);
+    persistAll();
+    $('#fcl-etiqueta').value = '';
+    renderEtiquetasCliente(clienteEnEdicion);
+    renderClientes();
+  });
+  $('#fcl-etiqueta').addEventListener('keydown', e => { if(e.key==='Enter'){ e.preventDefault(); $('#btn-agregar-etiqueta-cliente').click(); } });
+
   function abrirFichaCliente(id){
     clienteEnEdicion = id;
     const c = clienteById(id);
     $('#mc-titulo').textContent = c.nombre;
-    $('#mc-sub').innerHTML = 'Cliente desde ' + fmtFecha(c.fechaAlta) + ` · Código del portal: <span class="mono" style="font-weight:600;">${esc(c.codigoAcceso)}</span>` + (c.driveUrl ? ` · <a class="folder-link" href="${esc(c.driveUrl)}" target="_blank" rel="noopener">${folderIcon}Carpeta digital</a>` : '');
+    renderCodigoPortalCliente(c);
+    actualizarBotonCerrarReabrir(c);
+    renderEtiquetasCliente(c.id);
     $('#btn-estado-cuenta').style.display = 'inline-flex';
     $('#f-nombre').value = c.nombre;
     $('#f-tipo').value = c.tipo;
@@ -1583,6 +2274,7 @@
     $('#mc-titulo').textContent = 'Nuevo cliente';
     $('#mc-sub').textContent = '';
     $('#btn-estado-cuenta').style.display = 'none';
+    $('#btn-cerrar-reabrir-cliente').style.display = 'none';
     ['f-nombre','f-cirut','f-tel','f-email','f-notas','f-drive'].forEach(id => $('#'+id).value = '');
     $('#f-tipo').value = 'fisica';
     $('#f-regimen').value = 'literal_e';
@@ -1698,8 +2390,10 @@
     $('#lista-cobros-cliente').innerHTML = propios.length ? propios.map(c => `
       <div class="list-row">
         <div class="list-main"><span class="list-title">${esc(c.concepto)}</span><span class="list-sub">${fmtMes(c.mesCorrespondiente+'-01')}</span></div>
-        <div class="list-side"><span class="mono">${fmtMoneda(c.monto, c.moneda)}</span>${chipCobro(estadoCobro(c))}</div>
+        <div class="list-side"><span class="mono">${fmtMoneda(c.monto, c.moneda)}</span>${chipCobro(estadoCobro(c))} ${chipCuotas(c)} ${botonCuotaHtml(c)} <button class="btn btn-ghost btn-sm" data-editar-cobro-cliente="${c.id}" title="Editar trámite / cuotas">✏️</button></div>
       </div>`).join('') : `<div class="empty-state">Sin cobros registrados todavía.</div>`;
+    $$('#lista-cobros-cliente [data-pagar-cuota]').forEach(btn => btn.addEventListener('click', () => { registrarPagoCuota(btn.dataset.pagarCuota); renderCobrosCliente(clienteId); }));
+    $$('#lista-cobros-cliente [data-editar-cobro-cliente]').forEach(btn => btn.addEventListener('click', () => abrirModalEditarCobro(btn.dataset.editarCobroCliente)));
   }
 
   $('#btn-guardar-cliente').addEventListener('click', () => {
@@ -1720,8 +2414,7 @@
     if(clienteEnEdicion){
       Object.assign(clienteById(clienteEnEdicion), datos);
     } else {
-      const codigo = (datos.nombre.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z]/g,'').toUpperCase().slice(0,8) || 'CLIENTE') + '-' + Math.floor(100+Math.random()*900);
-      CLIENTES.push(Object.assign({id:uid(), fechaAlta:hoyISO(), activo:true, codigoAcceso:codigo}, datos));
+      CLIENTES.push(Object.assign({id:uid(), fechaAlta:hoyISO(), activo:true, codigoAcceso:generarCodigoAcceso(datos.nombre), etiquetas:[]}, datos));
     }
     persistAll();
     cerrarModal('modal-cliente');
@@ -1744,13 +2437,15 @@
     const monto = Number($('#fc-monto').value) || 0;
     const fecha = $('#fc-fecha').value || hoyISO();
     if(!concepto || monto <= 0){ $('#fc-concepto').focus(); return; }
+    const cantidadCuotas = Number($('#fc-cuotas').value) || 0;
     COBROS.push({
       id: uid(), clienteId: clienteEnEdicion, concepto, monto,
       moneda: $('#fc-moneda').value, mesCorrespondiente: fecha.slice(0,7),
-      fechaGeneracion: fecha, pagos: [], notas: '', etiqueta: $('#fc-etiqueta').value.trim()
+      fechaGeneracion: fecha, pagos: [], notas: '', etiqueta: $('#fc-etiqueta').value.trim(),
+      cuotas: cantidadCuotas > 1 ? generarCuotas(monto, fecha, cantidadCuotas) : []
     });
     persistAll();
-    ['fc-concepto','fc-monto','fc-etiqueta'].forEach(id => $('#'+id).value = '');
+    ['fc-concepto','fc-monto','fc-etiqueta','fc-cuotas'].forEach(id => $('#'+id).value = '');
     $('#form-add-cobro').classList.remove('open');
     renderCobrosCliente(clienteEnEdicion);
     if($('.view[data-view="panel"]').classList.contains('active')) renderPanel();
@@ -1803,6 +2498,114 @@
   $('#btn-marcar-completo').addEventListener('click', () => {
     const c = COBROS.find(x => x.id === cobroEnPago);
     if(c) registrarPago(pendienteDe(c));
+  });
+
+  /* ---------------- editar / eliminar cobro + plan de cuotas ---------------- */
+  let cobroEnEdicion = null;
+  let cuotasEnEdicion = [];
+
+  function refrescarTrasEditarCobro(clienteId){
+    if($('.view[data-view="cobros"]').classList.contains('active')) renderCobros();
+    if($('.view[data-view="panel"]').classList.contains('active')) renderPanel();
+    if(clienteEnEdicion && clienteEnEdicion === clienteId) renderCobrosCliente(clienteEnEdicion);
+  }
+
+  function renderResumenCuotasEditar(){
+    const n = cuotasEnEdicion.length;
+    $('#resumen-cuotas-editar').textContent = n ? `Plan de ${n} cuota(s)` : 'Sin plan de cuotas';
+  }
+  function renderListaCuotasEditar(){
+    $('#lista-cuotas-editar').innerHTML = cuotasEnEdicion.map((cu,i) => `
+      <div style="display:flex; gap:8px; align-items:center; margin-bottom:6px;">
+        <span class="mono" style="width:26px; flex:none;">#${i+1}</span>
+        <input type="date" data-cuota-fecha="${i}" value="${cu.fechaPrevista||''}" style="flex:1; padding:6px 8px; border:1px solid var(--line); border-radius:6px; background:var(--surface); color:var(--ink);">
+        <input type="number" min="0" step="100" data-cuota-monto="${i}" value="${cu.montoPrevisto||''}" style="width:110px; padding:6px 8px; border:1px solid var(--line); border-radius:6px; background:var(--surface); color:var(--ink); font-family:var(--font-mono);">
+      </div>`).join('') || `<div class="empty-state">Generá un plan o guardá cuotas manualmente.</div>`;
+    $$('#lista-cuotas-editar [data-cuota-fecha]').forEach(inp => inp.addEventListener('change', () => { cuotasEnEdicion[+inp.dataset.cuotaFecha].fechaPrevista = inp.value; }));
+    $$('#lista-cuotas-editar [data-cuota-monto]').forEach(inp => inp.addEventListener('change', () => { cuotasEnEdicion[+inp.dataset.cuotaMonto].montoPrevisto = Number(inp.value)||0; }));
+  }
+
+  function abrirModalEditarCobro(cobroId){
+    cobroEnEdicion = cobroId;
+    const c = COBROS.find(x => x.id === cobroId);
+    if(!c) return;
+    const cli = clienteById(c.clienteId);
+    $('#mec-sub').textContent = cli ? cli.nombre : '—';
+    $('#mec-concepto').value = c.concepto;
+    $('#mec-moneda').value = c.moneda;
+    $('#mec-monto').value = c.monto;
+    $('#mec-fecha').value = c.fechaGeneracion;
+    const pend = pendienteDe(c);
+    $('#mec-estado').textContent = pend<=0 ? `✓ Ya cobrado (${fmtMoneda(c.monto, c.moneda)})` : `Pendiente: ${fmtMoneda(pend, c.moneda)} de ${fmtMoneda(c.monto, c.moneda)}`;
+    cuotasEnEdicion = (c.cuotas||[]).map(cu => Object.assign({}, cu));
+    renderResumenCuotasEditar();
+    renderListaCuotasEditar();
+    $('#toggle-cuotas-editar').classList.remove('open');
+    $('#body-cuotas-editar').classList.remove('open');
+    $('#mec-cant-cuotas').value = Math.max(2, cuotasEnEdicion.length || 3);
+    abrirModal('modal-editar-cobro');
+  }
+  $('#toggle-cuotas-editar').addEventListener('click', () => {
+    $('#toggle-cuotas-editar').classList.toggle('open');
+    $('#body-cuotas-editar').classList.toggle('open');
+  });
+  $('#btn-generar-cuotas-editar').addEventListener('click', () => {
+    const cant = Math.max(2, Number($('#mec-cant-cuotas').value) || 3);
+    const monto = Number($('#mec-monto').value) || 0;
+    const fecha = $('#mec-fecha').value || hoyISO();
+    cuotasEnEdicion = generarCuotas(monto, fecha, cant);
+    renderListaCuotasEditar();
+  });
+  $('#btn-guardar-cuotas-editar').addEventListener('click', () => {
+    if(cuotasEnEdicion.some(cu => !cu.fechaPrevista || !(cu.montoPrevisto>0))){
+      alert('Cada cuota necesita fecha y un monto mayor a cero.');
+      return;
+    }
+    const c = COBROS.find(x => x.id === cobroEnEdicion);
+    if(!c) return;
+    c.cuotas = cuotasEnEdicion.map((cu,i) => ({numero:i+1, fechaPrevista:cu.fechaPrevista, montoPrevisto:cu.montoPrevisto}));
+    persistAll();
+    renderResumenCuotasEditar();
+    refrescarTrasEditarCobro(c.clienteId);
+    mostrarToast('Plan de cuotas guardado.');
+  });
+  $('#btn-quitar-cuotas-editar').addEventListener('click', () => {
+    if(!confirm('¿Quitar el plan de cuotas? Los pagos ya registrados no se tocan.')) return;
+    const c = COBROS.find(x => x.id === cobroEnEdicion);
+    if(!c) return;
+    c.cuotas = [];
+    cuotasEnEdicion = [];
+    persistAll();
+    renderResumenCuotasEditar();
+    renderListaCuotasEditar();
+    refrescarTrasEditarCobro(c.clienteId);
+    mostrarToast('Plan de cuotas quitado.');
+  });
+  $('#btn-guardar-cobro-editado').addEventListener('click', () => {
+    const c = COBROS.find(x => x.id === cobroEnEdicion);
+    if(!c) return;
+    const concepto = $('#mec-concepto').value.trim();
+    const monto = Number($('#mec-monto').value) || 0;
+    if(!concepto || monto <= 0){ $('#mec-concepto').focus(); return; }
+    c.concepto = concepto;
+    c.monto = monto;
+    c.moneda = $('#mec-moneda').value;
+    c.fechaGeneracion = $('#mec-fecha').value || c.fechaGeneracion;
+    c.mesCorrespondiente = c.fechaGeneracion.slice(0,7);
+    persistAll();
+    cerrarModal('modal-editar-cobro');
+    refrescarTrasEditarCobro(c.clienteId);
+    mostrarToast('Cobro actualizado.');
+  });
+  $('#btn-eliminar-cobro').addEventListener('click', () => {
+    const c = COBROS.find(x => x.id === cobroEnEdicion);
+    if(!c || !confirm(`¿Eliminar el cobro "${c.concepto}"? Esta acción no se puede deshacer.`)) return;
+    const clienteId = c.clienteId;
+    COBROS = COBROS.filter(x => x.id !== c.id);
+    persistAll();
+    cerrarModal('modal-editar-cobro');
+    refrescarTrasEditarCobro(clienteId);
+    mostrarToast('Cobro eliminado.');
   });
 
   $$('#filtro-cobros button').forEach(b => b.addEventListener('click', () => {
@@ -1916,6 +2719,15 @@
     abrirModal('modal-dia-agenda');
   }
 
+  function agregarTareaParaCliente(clienteId){
+    irA('agenda');
+    const hoy = new Date();
+    agendaYear = hoy.getFullYear(); agendaMonth = hoy.getMonth();
+    abrirDiaAgenda(hoy.getDate());
+    $('#toggle-nueva-tarea').click();
+    $('#mt-cliente').value = clienteId;
+  }
+
   function poblarSelectClienteTarea(){
     $('#mt-cliente').innerHTML = `<option value="">— Sin cliente —</option>` + CLIENTES.map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join('');
   }
@@ -1932,12 +2744,14 @@
     const tareasDia = TAREAS.filter(t => t.fecha === fechaISO).sort((a,b)=>a.creada.localeCompare(b.creada));
     $('#mda-tareas').innerHTML = tareasDia.length ? tareasDia.map(t => {
       const cliente = t.clienteId ? clienteById(t.clienteId) : null;
+      const partes = [t.hora ? t.hora : null, cliente ? cliente.nombre : null, t.notas || null].filter(Boolean);
       return `<div class="list-row">
         <div class="list-main">
           <span class="list-title" style="${t.hecha?'text-decoration:line-through; color:var(--ink-faint);':''}">${esc(t.titulo)}</span>
-          <span class="list-sub">${cliente ? esc(cliente.nombre) : ''}${cliente && t.notas ? ' · ' : ''}${t.notas ? esc(t.notas) : ''}</span>
+          <span class="list-sub">${esc(partes.join(' · '))}</span>
         </div>
         <div class="list-side">
+          ${t.hora ? `<a class="btn btn-sm btn-outline" target="_blank" rel="noopener" href="${calendarLink(t.titulo, t.fecha, t.notas || (cliente?`Tarea vinculada a ${cliente.nombre}.`:'Tarea del estudio contable.'), t.hora)}" title="Agendar en tu Google Calendar">📅</a>` : ''}
           <button type="button" class="btn btn-sm ${t.hecha?'btn-outline':'btn-primary'}" data-tarea-toggle="${t.id}">${t.hecha ? '↺ Reabrir' : '✓ Hecha'}</button>
           <button type="button" class="btn btn-ghost btn-sm" data-tarea-borrar="${t.id}" title="Borrar tarea">✕</button>
         </div>
@@ -1949,13 +2763,15 @@
       if(t){ t.hecha = !t.hecha; persistAll(); pintarDetalleDiaAgenda(); renderAgenda(); }
     }));
     $$('#mda-tareas [data-tarea-borrar]').forEach(b => b.addEventListener('click', () => {
+      const t = TAREAS.find(x => x.id === b.dataset.tareaBorrar);
+      if(t && !confirm(`¿Borrar la tarea "${t.titulo}"?`)) return;
       TAREAS = TAREAS.filter(x => x.id !== b.dataset.tareaBorrar);
       persistAll(); pintarDetalleDiaAgenda(); renderAgenda();
     }));
   }
 
   $('#toggle-nueva-tarea').addEventListener('click', () => {
-    $('#mt-titulo').value = ''; $('#mt-notas').value = ''; $('#mt-cliente').value = '';
+    $('#mt-titulo').value = ''; $('#mt-notas').value = ''; $('#mt-cliente').value = ''; $('#mt-hora').value = '';
     $('#form-nueva-tarea').style.display = 'block';
     $('#mt-titulo').focus();
   });
@@ -1963,11 +2779,20 @@
   $('#btn-guardar-tarea').addEventListener('click', () => {
     const titulo = $('#mt-titulo').value.trim();
     if(!titulo){ $('#mt-titulo').focus(); return; }
-    TAREAS.push({id:uid(), fecha:fechaAgendaISO(agendaDiaSel), titulo, notas:$('#mt-notas').value.trim(), clienteId:$('#mt-cliente').value||null, hecha:false, creada:hoyISO()});
+    const fecha = fechaAgendaISO(agendaDiaSel);
+    const hora = $('#mt-hora').value || null;
+    const notas = $('#mt-notas').value.trim();
+    const clienteId = $('#mt-cliente').value||null;
+    TAREAS.push({id:uid(), fecha, titulo, notas, clienteId, hora, hecha:false, creada:hoyISO()});
     persistAll();
     $('#form-nueva-tarea').style.display = 'none';
     pintarDetalleDiaAgenda();
     renderAgenda();
+    if(hora){
+      const cliente = clienteId ? clienteById(clienteId) : null;
+      const detalle = notas || (cliente ? `Tarea vinculada a ${cliente.nombre}.` : 'Tarea del estudio contable.');
+      abrirLinkNuevaPestana(calendarLink(titulo, fecha, detalle, hora));
+    }
   });
 
   $('#agenda-prev').addEventListener('click', () => {
@@ -1979,6 +2804,280 @@
     agendaMonth++; if(agendaMonth>11){ agendaMonth=0; agendaYear++; }
     agendaDiaSel = null;
     renderAgenda();
+  });
+  $('#agenda-hoy').addEventListener('click', () => {
+    const hoy = new Date();
+    agendaYear = hoy.getFullYear(); agendaMonth = hoy.getMonth();
+    agendaDiaSel = null;
+    renderAgenda();
+  });
+
+  /* ---------------- finanzas personales (módulo opt-in) ---------------- */
+  function sembrarFinanzasEjemplo(){
+    if(FIN_FIJOS.length) return;
+    const ej = (concepto, monto, dia) => ({id:uid(), concepto, monto, dia, notas:'', pagado:false, esEjemplo:true});
+    FIN_FIJOS = [ej('Alquiler', 25000, 5), ej('Internet', 1800, 10), ej('Gimnasio', 2200, 15), ej('Seguro del auto', 3500, 20)];
+    save(LS.finFijos, FIN_FIJOS);
+  }
+  function finIngreso(){ return FIN_CONFIG.ingresoMensual || 0; }
+  function finGastosFijosTotal(){ return FIN_FIJOS.reduce((s,f) => s+f.monto, 0); }
+  function finGastosVariablesDelMes(mesISO){ return FIN_VARIABLES.filter(v => v.fecha.slice(0,7) === mesISO); }
+  function finGastosVariablesTotal(mesISO){ return finGastosVariablesDelMes(mesISO || hoyISO().slice(0,7)).reduce((s,v) => s+v.monto, 0); }
+  function finDisponible(){ return finIngreso() - (FIN_CONFIG.metaAhorro||0) - finGastosFijosTotal() - finGastosVariablesTotal(); }
+  function finAhorroReal(){ return finIngreso() - finGastosFijosTotal() - finGastosVariablesTotal(); }
+  function finProximosVencimientos(){
+    const hoy = new Date();
+    const diaHoy = hoy.getDate();
+    const diasEnMes = new Date(hoy.getFullYear(), hoy.getMonth()+1, 0).getDate();
+    return FIN_FIJOS.filter(f => !f.pagado).map(f => {
+      let diff = f.dia - diaHoy;
+      if(diff < 0) diff += diasEnMes;
+      return Object.assign({}, f, {diasFaltan:diff});
+    }).sort((a,b) => a.diasFaltan - b.diasFaltan);
+  }
+  function ultimos6MesesFin(){
+    const meses = [];
+    for(let i=5;i>=0;i--){ const d = new Date(); d.setDate(1); d.setMonth(d.getMonth()-i); meses.push(d.toISOString().slice(0,7)); }
+    const mesActualISO = hoyISO().slice(0,7);
+    return meses.map(mesISO => {
+      const esActual = mesISO === mesActualISO;
+      const hist = FIN_HISTORIAL.find(h => h.mes === mesISO);
+      let ingreso=0, totalFijos=0, totalVariables=0;
+      if(esActual){ ingreso = finIngreso(); totalFijos = finGastosFijosTotal(); totalVariables = finGastosVariablesTotal(mesISO); }
+      else if(hist){ ingreso = hist.ingreso; totalFijos = hist.totalFijos; totalVariables = hist.totalVariables; }
+      return {mesISO, esActual, ingreso, totalFijos, totalVariables, ahorro: ingreso-totalFijos-totalVariables};
+    });
+  }
+  function cerrarMesFinanzas(){
+    if(!confirm('¿Cerrar el mes actual y archivarlo? Los gastos fijos quedan sin marcar como pagados para el nuevo mes.')) return;
+    const mes = hoyISO().slice(0,7);
+    FIN_HISTORIAL.push({
+      mes, ingreso: finIngreso(),
+      gastosFijosSnapshot: FIN_FIJOS.map(f => ({concepto:f.concepto, monto:f.monto, pagado:f.pagado})),
+      totalFijos: finGastosFijosTotal(), totalVariables: finGastosVariablesTotal(mes)
+    });
+    FIN_FIJOS.forEach(f => f.pagado = false);
+    save(LS.finHistorial, FIN_HISTORIAL);
+    save(LS.finFijos, FIN_FIJOS);
+    renderFinFijos();
+    renderFinHistorial();
+    mostrarToast('Mes cerrado y archivado.');
+  }
+
+  function renderChartFinDonut(){
+    const c = echColors();
+    const chart = getEchart('chart-fin-donut');
+    if(!chart) return;
+    const fijos = finGastosFijosTotal(), variables = finGastosVariablesTotal();
+    const base = finIngreso() > 0 ? finIngreso() : (fijos+variables);
+    const sinGastar = Math.max(0, base - fijos - variables);
+    chart.setOption({
+      tooltip: Object.assign({}, baseTooltip(c), {trigger:'item', formatter:(p) => `${p.name}: ${fmtMoneda(p.value,'UYU')} (${p.percent}%)`}),
+      legend: {bottom:0, textStyle:{color:c.inkSoft, fontFamily:FONT_UI, fontSize:11}},
+      series:[{ type:'pie', radius:['55%','78%'], center:['50%','42%'], label:{show:false},
+        data:[
+          {value:fijos, name:'Fijos', itemStyle:{color:c.reg1}},
+          {value:variables, name:'Variables', itemStyle:{color:c.warn}},
+          {value:sinGastar, name:'Sin gastar', itemStyle:{color:c.good}}
+        ]
+      }]
+    }, true);
+  }
+  function renderChartFinAhorro(){
+    const c = echColors();
+    const chart = getEchart('chart-fin-ahorro');
+    if(!chart) return;
+    const meses = ultimos6MesesFin();
+    chart.setOption({
+      grid:{left:40, right:14, top:20, bottom:34},
+      tooltip: Object.assign({}, baseTooltip(c), {trigger:'axis', axisPointer:{type:'shadow'}, formatter:(p) => `${p[0].name}: ${fmtMoneda(p[0].value,'UYU')}`}),
+      xAxis:{type:'category', data:meses.map(m=>fmtMes(m.mesISO+'-01')), axisLine:{lineStyle:{color:c.line}}, axisTick:{show:false}, axisLabel:{color:c.inkSoft, fontFamily:FONT_UI, fontSize:10.5}},
+      yAxis:{type:'value', axisLabel:{color:c.inkFaint, fontFamily:FONT_NUM, fontSize:10}, splitLine:{lineStyle:{color:c.line}}},
+      series:[{ type:'bar', barMaxWidth:32,
+        data: meses.map(m => m.esActual
+          ? {value:m.ahorro, itemStyle:{color:'transparent', borderColor: m.ahorro<0?c.critical:c.good, borderWidth:1.5, borderType:'dashed', borderRadius:[4,4,0,0]}}
+          : {value:m.ahorro, itemStyle:{color: m.ahorro<0?c.critical:c.good, borderRadius:[4,4,0,0]}})
+      }]
+    }, true);
+  }
+  function renderChartFinEvolucion(){
+    const c = echColors();
+    const chart = getEchart('chart-fin-evolucion');
+    if(!chart) return;
+    const meses = ultimos6MesesFin();
+    chart.setOption({
+      grid:{left:40, right:14, top:20, bottom:34},
+      tooltip: Object.assign({}, baseTooltip(c), {trigger:'axis', axisPointer:{type:'shadow'}, formatter:(p) => `${p[0].name}: ${fmtMoneda(p[0].value,'UYU')}`}),
+      xAxis:{type:'category', data:meses.map(m=>fmtMes(m.mesISO+'-01')), axisLine:{lineStyle:{color:c.line}}, axisTick:{show:false}, axisLabel:{color:c.inkSoft, fontFamily:FONT_UI, fontSize:10.5}},
+      yAxis:{type:'value', axisLabel:{color:c.inkFaint, fontFamily:FONT_NUM, fontSize:10}, splitLine:{lineStyle:{color:c.line}}},
+      series:[{ type:'bar', barMaxWidth:32,
+        data: meses.map(m => { const v = m.totalFijos+m.totalVariables; return m.esActual
+          ? {value:v, itemStyle:{color:'transparent', borderColor:c.accent, borderWidth:1.5, borderType:'dashed', borderRadius:[4,4,0,0]}}
+          : {value:v, itemStyle:{color:c.accent, borderRadius:[4,4,0,0]}}; })
+      }]
+    }, true);
+  }
+  function renderFinCharts(){ renderChartFinDonut(); renderChartFinAhorro(); renderChartFinEvolucion(); resizeAllCharts(); }
+
+  function renderFinResumen(){
+    const ingreso = finIngreso();
+    const fijos = finGastosFijosTotal();
+    const fijosPagados = FIN_FIJOS.filter(f=>f.pagado).length;
+    const variables = finGastosVariablesTotal();
+    const variablesN = finGastosVariablesDelMes(hoyISO().slice(0,7)).length;
+    const disponible = finDisponible();
+    const meta = FIN_CONFIG.metaAhorro || 0;
+    const ahorroReal = finAhorroReal();
+
+    let alertaHtml = '';
+    if(disponible < 0){
+      alertaHtml = `<div class="panel" style="border-color:var(--critical); margin-bottom:16px;"><b style="color:var(--critical);">⚠ Saldo negativo:</b> los gastos${meta?' + la meta de ahorro':''} superan tu ingreso por ${fmtMoneda(Math.abs(disponible),'UYU')}.</div>`;
+    } else if(ingreso > 0 && disponible < 5000){
+      alertaHtml = `<div class="panel" style="border-color:var(--warn); margin-bottom:16px;"><b style="color:var(--warn);">⚡ Saldo bajo:</b> te quedan ${fmtMoneda(disponible,'UYU')} disponibles.</div>`;
+    }
+    $('#fin-alerta').innerHTML = alertaHtml;
+
+    const colorDisp = disponible<0 ? 'var(--critical)' : (ingreso>0 && disponible<5000) ? 'var(--warn)' : 'var(--good)';
+    let metaTxt, metaColor;
+    if(meta<=0){ metaTxt = 'Sin meta definida'; metaColor='var(--ink-faint)'; }
+    else if(ahorroReal >= meta){ metaTxt = '✓ Cumplida'; metaColor='var(--good)'; }
+    else if(ahorroReal >= 0){ metaTxt = `Te faltan ${fmtMoneda(meta-ahorroReal,'UYU')}`; metaColor='var(--warn)'; }
+    else { metaTxt = `Gastaste ${fmtMoneda(Math.abs(ahorroReal),'UYU')} de más`; metaColor='var(--critical)'; }
+
+    $('#fin-stat-row').innerHTML = `
+      <div class="stat-tile"><div class="stat-label">Ingreso mensual</div><input type="number" id="fin-input-ingreso" value="${ingreso||''}" min="0" step="500" placeholder="—" style="width:100%; margin-top:4px; padding:5px 7px; border:1px solid var(--line); border-radius:6px; background:var(--surface); color:var(--ink); font-family:var(--font-mono); font-size:15px;"></div>
+      <div class="stat-tile"><div class="stat-label">Gastos fijos</div><div class="stat-value">${fmtMoneda(fijos,'UYU')}</div><div class="stat-sub">${fijosPagados} de ${FIN_FIJOS.length} pagados</div></div>
+      <div class="stat-tile"><div class="stat-label">Gastos variables</div><div class="stat-value">${fmtMoneda(variables,'UYU')}</div><div class="stat-sub">${variablesN} registro(s) este mes</div></div>
+      <div class="stat-tile"><div class="stat-label">Disponible</div><div class="stat-value" style="color:${colorDisp};">${fmtMoneda(disponible,'UYU')}</div><div class="stat-sub">${ingreso>0?Math.round(disponible/ingreso*100)+'% del ingreso':'cargá tu ingreso'}</div></div>
+      <div class="stat-tile"><div class="stat-label">Meta de ahorro</div><div style="display:flex; align-items:center; gap:4px;"><span class="stat-value" style="font-size:19px; color:${metaColor};">${fmtMoneda(meta,'UYU')}</span><button type="button" class="btn btn-ghost btn-sm" id="btn-editar-meta-fin" style="padding:2px 4px;">✎</button></div><div class="stat-sub" style="color:${metaColor};">${metaTxt}</div></div>
+    `;
+    $('#fin-input-ingreso').addEventListener('change', () => {
+      FIN_CONFIG.ingresoMensual = Number($('#fin-input-ingreso').value) || 0;
+      save(LS.finConfig, FIN_CONFIG);
+      renderFinResumen(); renderFinCharts();
+    });
+    $('#btn-editar-meta-fin').addEventListener('click', () => {
+      const nuevo = prompt('Meta de ahorro mensual (UYU):', FIN_CONFIG.metaAhorro||0);
+      if(nuevo === null) return;
+      FIN_CONFIG.metaAhorro = Number(nuevo) || 0;
+      save(LS.finConfig, FIN_CONFIG);
+      renderFinResumen();
+    });
+
+    const prox = finProximosVencimientos();
+    $('#fin-proximos').innerHTML = prox.length ? prox.map(f => {
+      const cls = f.diasFaltan<=2?'critical':f.diasFaltan<=5?'warn':'good';
+      const label = f.diasFaltan===0?'Hoy':f.diasFaltan===1?'Mañana':`${f.diasFaltan} días`;
+      return `<div class="list-row"><div class="list-main"><span class="list-title">${esc(f.concepto)}${f.esEjemplo?' <span class="chip chip--neutral" style="font-size:9px;">Ejemplo</span>':''}</span><span class="list-sub">Día ${f.dia} · ${fmtMoneda(f.monto,'UYU')}</span></div><div class="list-side"><span class="chip chip--${cls}"><span class="dot"></span>${label}</span></div></div>`;
+    }).join('') : `<div class="empty-state">Todos los gastos fijos están pagados.</div>`;
+  }
+
+  function renderFinFijos(){
+    $('#tbody-fin-fijos').innerHTML = FIN_FIJOS.length ? FIN_FIJOS.map(f => `
+      <tr>
+        <td><input type="checkbox" data-fijo-pagado="${f.id}" ${f.pagado?'checked':''}></td>
+        <td class="cell-name">${esc(f.concepto)} ${f.esEjemplo?'<span class="chip chip--neutral" style="font-size:9px;">Ejemplo</span>':''}</td>
+        <td class="num">${fmtMoneda(f.monto,'UYU')}</td>
+        <td>${f.dia}</td>
+        <td class="cell-faint">${esc(f.notas||'')}</td>
+        <td><button class="btn btn-ghost btn-sm" data-eliminar-fijo="${f.id}">✕</button></td>
+      </tr>`).join('') : `<tr><td colspan="6"><div class="empty-state">Todavía no cargaste gastos fijos.</div></td></tr>`;
+    $$('#tbody-fin-fijos [data-fijo-pagado]').forEach(chk => chk.addEventListener('change', () => {
+      const f = FIN_FIJOS.find(x => x.id === chk.dataset.fijoPagado);
+      if(f){ f.pagado = chk.checked; save(LS.finFijos, FIN_FIJOS); }
+    }));
+    $$('#tbody-fin-fijos [data-eliminar-fijo]').forEach(btn => btn.addEventListener('click', () => {
+      const f = FIN_FIJOS.find(x => x.id === btn.dataset.eliminarFijo);
+      if(!f || !confirm(`¿Eliminar "${f.concepto}"?`)) return;
+      FIN_FIJOS = FIN_FIJOS.filter(x => x.id !== f.id);
+      save(LS.finFijos, FIN_FIJOS);
+      renderFinFijos();
+    }));
+  }
+  $('#btn-guardar-fijo').addEventListener('click', () => {
+    const concepto = $('#ff-concepto').value.trim();
+    const monto = Number($('#ff-monto').value) || 0;
+    const dia = Math.max(1, Math.min(31, Number($('#ff-dia').value) || 1));
+    if(!concepto || monto<=0){ $('#ff-concepto').focus(); return; }
+    FIN_FIJOS.push({id:uid(), concepto, monto, dia, notas:$('#ff-notas').value.trim(), pagado:false, esEjemplo:false});
+    save(LS.finFijos, FIN_FIJOS);
+    ['ff-concepto','ff-monto','ff-notas'].forEach(id => $('#'+id).value = '');
+    renderFinFijos();
+  });
+
+  function renderFinVariables(){
+    const delMes = finGastosVariablesDelMes(hoyISO().slice(0,7)).slice().sort((a,b) => b.fecha.localeCompare(a.fecha));
+    $('#tbody-fin-variables').innerHTML = delMes.length ? delMes.map(v => `
+      <tr>
+        <td class="cell-faint">${fmtFecha(v.fecha)}</td>
+        <td><span class="chip chip--good"><span class="dot"></span>${esc(v.categoria)}</span></td>
+        <td>${esc(v.descripcion)} ${v.esEjemplo?'<span class="chip chip--neutral" style="font-size:9px;">Ejemplo</span>':''}</td>
+        <td class="num">${fmtMoneda(v.monto,'UYU')}</td>
+        <td><button class="btn btn-ghost btn-sm" data-eliminar-variable="${v.id}">✕</button></td>
+      </tr>`).join('') : `<tr><td colspan="5"><div class="empty-state">No hay gastos variables este mes.</div></td></tr>`;
+    $$('#tbody-fin-variables [data-eliminar-variable]').forEach(btn => btn.addEventListener('click', () => {
+      FIN_VARIABLES = FIN_VARIABLES.filter(x => x.id !== btn.dataset.eliminarVariable);
+      save(LS.finVariables, FIN_VARIABLES);
+      renderFinVariables();
+    }));
+  }
+  $('#btn-guardar-variable').addEventListener('click', () => {
+    const descripcion = $('#fv-descripcion').value.trim();
+    const monto = Number($('#fv-monto').value) || 0;
+    const fecha = $('#fv-fecha').value || hoyISO();
+    if(!descripcion || monto<=0){ $('#fv-descripcion').focus(); return; }
+    FIN_VARIABLES.push({id:uid(), categoria:$('#fv-categoria').value, descripcion, monto, fecha, esEjemplo:false});
+    save(LS.finVariables, FIN_VARIABLES);
+    $('#fv-descripcion').value=''; $('#fv-monto').value='';
+    renderFinVariables();
+  });
+
+  function renderFinHistorial(){
+    $('#sel-historial-fin').innerHTML = `<option value="">— Seleccioná un mes —</option>` + FIN_HISTORIAL.slice().reverse().map(h => `<option value="${h.mes}">${fmtMes(h.mes+'-01')}</option>`).join('');
+    $('#fin-historial-detalle').innerHTML = '';
+  }
+  $('#sel-historial-fin').addEventListener('change', () => {
+    const h = FIN_HISTORIAL.find(x => x.mes === $('#sel-historial-fin').value);
+    if(!h){ $('#fin-historial-detalle').innerHTML = ''; return; }
+    const saldo = h.ingreso - h.totalFijos - h.totalVariables;
+    $('#fin-historial-detalle').innerHTML = `
+      <div class="stat-row" style="grid-template-columns:repeat(4,1fr); margin-bottom:16px;">
+        <div class="stat-tile"><div class="stat-label">Ingreso</div><div class="stat-value">${fmtMoneda(h.ingreso,'UYU')}</div></div>
+        <div class="stat-tile"><div class="stat-label">Gastos fijos</div><div class="stat-value">${fmtMoneda(h.totalFijos,'UYU')}</div></div>
+        <div class="stat-tile"><div class="stat-label">Gastos variables</div><div class="stat-value">${fmtMoneda(h.totalVariables,'UYU')}</div></div>
+        <div class="stat-tile"><div class="stat-label">Saldo final</div><div class="stat-value" style="color:${saldo>=0?'var(--good)':'var(--critical)'};">${fmtMoneda(saldo,'UYU')}</div></div>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>Gasto fijo</th><th class="num">Monto</th><th>Pagado</th></tr></thead><tbody>
+        ${h.gastosFijosSnapshot.map(g => `<tr><td>${esc(g.concepto)}</td><td class="num">${fmtMoneda(g.monto,'UYU')}</td><td>${g.pagado?'✓':'—'}</td></tr>`).join('')}
+      </tbody></table></div>
+    `;
+  });
+  $('#btn-cerrar-mes-fin').addEventListener('click', cerrarMesFinanzas);
+
+  let finSubActual = 'resumen';
+  function renderFinanzas(){
+    if(finSubActual==='resumen'){ renderFinResumen(); renderFinCharts(); }
+    else if(finSubActual==='fijos') renderFinFijos();
+    else if(finSubActual==='variables') renderFinVariables();
+    else if(finSubActual==='historial') renderFinHistorial();
+  }
+  $$('#fin-subnav button').forEach(b => b.addEventListener('click', () => {
+    finSubActual = b.dataset.fs;
+    $$('#fin-subnav button').forEach(x => x.classList.toggle('active', x===b));
+    $$('.fin-sub').forEach(s => s.style.display = s.dataset.fs===finSubActual ? '' : 'none');
+    renderFinanzas();
+  }));
+
+  function refrescarUiFinanzas(){
+    $('#chk-fin-activas').checked = !!FIN_CONFIG.activo;
+    $('#nav-finanzas').style.display = FIN_CONFIG.activo ? '' : 'none';
+  }
+  $('#chk-fin-activas').addEventListener('change', () => {
+    FIN_CONFIG.activo = $('#chk-fin-activas').checked;
+    save(LS.finConfig, FIN_CONFIG);
+    if(FIN_CONFIG.activo) sembrarFinanzasEjemplo();
+    refrescarUiFinanzas();
+    if(!FIN_CONFIG.activo && $('.view[data-view="finanzas"]').classList.contains('active')) irA('panel');
   });
 
   /* ---------------- portal del cliente (#portal) ---------------- */
@@ -2113,6 +3212,80 @@
   }
   $('#btn-estado-cuenta').addEventListener('click', () => { if(clienteEnEdicion) imprimirEstadoCuenta(clienteEnEdicion); });
 
+  /* ---------------- notificaciones de escritorio ---------------- */
+  const tareasNotificadasHoy = new Set();
+  function notifActivas(){ return localStorage.getItem(LS_NOTIF_ACTIVAS) === '1' && typeof Notification !== 'undefined' && Notification.permission === 'granted'; }
+  function notifMinutos(){ return Number(localStorage.getItem(LS_NOTIF_MINUTOS)) || 15; }
+  function mostrarEstadoNotif(msg){
+    const el = $('#notif-estado');
+    el.textContent = msg || '';
+    el.style.display = msg ? 'block' : 'none';
+  }
+  function refrescarUiNotif(){
+    const activas = notifActivas();
+    $('#chk-notif-activas').checked = activas;
+    $('#notif-min-row').style.display = activas ? 'flex' : 'none';
+    $('#notif-min').value = notifMinutos();
+  }
+  $('#chk-notif-activas').addEventListener('change', () => {
+    if($('#chk-notif-activas').checked){
+      if(typeof Notification === 'undefined'){
+        mostrarEstadoNotif('Este navegador no soporta notificaciones de escritorio.');
+        $('#chk-notif-activas').checked = false;
+        return;
+      }
+      Notification.requestPermission().then(perm => {
+        if(perm === 'granted'){
+          localStorage.setItem(LS_NOTIF_ACTIVAS, '1');
+          mostrarEstadoNotif('');
+          $('#chk-notif-activas').checked = true;
+          $('#notif-min-row').style.display = 'flex';
+          $('#notif-min').value = notifMinutos();
+        } else {
+          localStorage.setItem(LS_NOTIF_ACTIVAS, '0');
+          mostrarEstadoNotif('Permiso denegado en el navegador — activalo desde la configuración del sitio si te arrepentís.');
+          $('#chk-notif-activas').checked = false;
+          $('#notif-min-row').style.display = 'none';
+        }
+      });
+    } else {
+      localStorage.setItem(LS_NOTIF_ACTIVAS, '0');
+      mostrarEstadoNotif('');
+      $('#notif-min-row').style.display = 'none';
+    }
+  });
+  $('#notif-min').addEventListener('change', () => {
+    const v = Math.max(1, Math.min(180, Number($('#notif-min').value) || 15));
+    localStorage.setItem(LS_NOTIF_MINUTOS, String(v));
+    $('#notif-min').value = v;
+  });
+
+  function revisarNotificaciones(){
+    if(!notifActivas()) return;
+    // resumen diario de vencimientos urgentes, una sola vez por día
+    const hoy = hoyISO();
+    if(localStorage.getItem('LM_NOTIF_ULTIMO_RESUMEN') !== hoy){
+      const urgentes = vencimientosActivos().filter(v => v.estado !== 'aldia');
+      if(urgentes.length){
+        new Notification('Vencimientos urgentes', { body: `Tenés ${urgentes.length} vencimiento(s) vencido(s) o próximo(s) hoy.` });
+      }
+      localStorage.setItem('LM_NOTIF_ULTIMO_RESUMEN', hoy);
+    }
+    // tareas con hora, avisando X minutos antes
+    const minutos = notifMinutos();
+    const ahora = new Date();
+    TAREAS.filter(t => !t.hecha && t.hora && t.fecha === hoy && !tareasNotificadasHoy.has(t.id)).forEach(t => {
+      const [h,m] = t.hora.split(':').map(Number);
+      const objetivo = new Date(ahora); objetivo.setHours(h, m, 0, 0);
+      const minutosRestantes = (objetivo - ahora) / 60000;
+      if(minutosRestantes >= 0 && minutosRestantes <= minutos){
+        new Notification(t.titulo, { body: `Tarea a las ${t.hora}${t.notas ? ' — ' + t.notas : ''}.` });
+        tareasNotificadasHoy.add(t.id);
+      }
+    });
+  }
+  setInterval(revisarNotificaciones, 60000);
+
   /* ---------------- init ---------------- */
   wireSortable('thead-clientes', sortClientes, renderClientes);
   wireSortable('thead-cobros', sortCobros, renderCobros);
@@ -2122,9 +3295,15 @@
   $('#btn-ir-portal').addEventListener('click', () => mostrarPortal());
   $('#btn-ir-admin').addEventListener('click', () => mostrarAdmin());
   $('#btn-abrir-editar-tc').addEventListener('click', abrirEditorTC);
+  $('#btn-actualizar-tc').addEventListener('click', () => actualizarCotizacionAutomatica(false));
   $('#btn-guardar-tc').addEventListener('click', guardarTC);
   $('#tc-input').addEventListener('keydown', e => { if(e.key==='Enter') guardarTC(); });
   renderTC();
+  if(TC.fecha !== hoyISO()) actualizarCotizacionAutomatica(true);
+  refrescarUiNotif();
+  revisarNotificaciones();
+  refrescarUiFinanzas();
+  $('#fv-fecha').value = hoyISO();
   if(location.hash === '#portal'){
     mostrarPortal(false);
   } else {
