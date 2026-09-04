@@ -2166,7 +2166,7 @@
   $$('#navrail button').forEach(b => b.addEventListener('click', () => irA(b.dataset.view)));
 
   /* ---------------- modales genéricos ---------------- */
-  function abrirModal(id){ $('#'+id).classList.add('open'); }
+  function abrirModal(id){ const ov = $('#'+id); ov.classList.add('open'); ov.scrollTop = 0; }
   function cerrarModal(id){ $('#'+id).classList.remove('open'); }
   $$('.modal-overlay').forEach(ov => {
     ov.addEventListener('click', e => { if(e.target === ov) cerrarModal(ov.id); });
@@ -2503,6 +2503,7 @@
   /* ---------------- editar / eliminar cobro + plan de cuotas ---------------- */
   let cobroEnEdicion = null;
   let cuotasEnEdicion = [];
+  let monedaAnteriorEditar = null;
 
   function refrescarTrasEditarCobro(clienteId){
     if($('.view[data-view="cobros"]').classList.contains('active')) renderCobros();
@@ -2533,6 +2534,7 @@
     $('#mec-sub').textContent = cli ? cli.nombre : '—';
     $('#mec-concepto').value = c.concepto;
     $('#mec-moneda').value = c.moneda;
+    monedaAnteriorEditar = c.moneda;
     $('#mec-monto').value = c.monto;
     $('#mec-fecha').value = c.fechaGeneracion;
     const pend = pendienteDe(c);
@@ -2545,6 +2547,30 @@
     $('#mec-cant-cuotas').value = Math.max(2, cuotasEnEdicion.length || 3);
     abrirModal('modal-editar-cobro');
   }
+  $('#mec-moneda').addEventListener('change', () => {
+    const nueva = $('#mec-moneda').value;
+    const vieja = monedaAnteriorEditar;
+    if(nueva === vieja) return;
+    const c = COBROS.find(x => x.id === cobroEnEdicion);
+    if(c && c.pagos && c.pagos.length){
+      if(!confirm(`Este cobro ya tiene ${c.pagos.length} pago(s) registrados en ${vieja}, que no se van a convertir (quedan tal cual quedaron cobrados). ¿Cambiar igual la moneda a ${nueva}?`)){
+        $('#mec-moneda').value = vieja;
+        return;
+      }
+    }
+    monedaAnteriorEditar = nueva;
+    if(!TC || !(TC.valor > 0)) return;
+    const factor = (vieja === 'UYU' && nueva === 'USD') ? (1/TC.valor) : (vieja === 'USD' && nueva === 'UYU') ? TC.valor : 1;
+    if(factor === 1) return;
+    const convertir = (n) => Math.round(n * factor * 100) / 100;
+    const montoActual = Number($('#mec-monto').value) || 0;
+    if(montoActual > 0) $('#mec-monto').value = convertir(montoActual);
+    if(cuotasEnEdicion.length){
+      cuotasEnEdicion = cuotasEnEdicion.map(cu => Object.assign({}, cu, {montoPrevisto: convertir(cu.montoPrevisto||0)}));
+      renderListaCuotasEditar();
+    }
+    mostrarToast(`Importe convertido a ${nueva} con la cotización $${TC.valor.toLocaleString('es-UY',{minimumFractionDigits:2})} (${TC.fuente==='auto'?'BCU':'manual'}).`);
+  });
   $('#toggle-cuotas-editar').addEventListener('click', () => {
     $('#toggle-cuotas-editar').classList.toggle('open');
     $('#body-cuotas-editar').classList.toggle('open');
