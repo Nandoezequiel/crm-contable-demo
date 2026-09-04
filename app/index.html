@@ -328,7 +328,7 @@
   .tc-widget .tc-label{font-size:10.5px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em; font-weight:600;}
   .tc-edit{display:none; align-items:center; gap:4px;}
   .tc-edit.open{display:flex;}
-  .tc-display{display:flex; align-items:center; gap:4px;}
+  .tc-display{display:flex; align-items:center; gap:4px; white-space:nowrap;}
   .tc-edit input{width:64px; padding:4px 6px; border:1px solid var(--line); border-radius:6px; font-size:12px; background:var(--surface); color:var(--ink);}
 
   /* ---------- estado de cuenta imprimible ---------- */
@@ -1074,7 +1074,7 @@
   function montoEnUYU(monto, moneda){ return moneda === 'USD' ? monto*TC.valor : monto; }
 
   function renderTC(){
-    $('#tc-valor-txt').textContent = `$ ${TC.valor.toLocaleString('es-UY',{minimumFractionDigits:2, maximumFractionDigits:2})}`;
+    $('#tc-valor-txt').textContent = `$ ${TC.valor.toLocaleString('es-UY',{minimumFractionDigits:2, maximumFractionDigits:2})}`;
     $('#tc-fecha-txt').textContent = `${TC.fuente==='auto' ? 'Cotización BCU' : 'Actualizado'} ${fmtFecha(TC.fecha)}${TC.fuente==='auto' ? ' (dolarapi.com)' : ' (manual)'}`;
   }
   function abrirEditorTC(){

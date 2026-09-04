@@ -133,6 +133,16 @@ Tras una segunda revisión exhaustiva del CRM Notarial (pestaña por pestaña, i
 
 Verificado con Playwright (3 casos: reapertura de modal sin scroll heredado, conversión sin pagos, conversión con pagos incluyendo el camino de cancelar la confirmación) — 0 errores de consola.
 
+## 5.4 Cuarta tanda (4/9/2026) — fix visual del widget de cotización
+
+**El "$" del widget de cotización (sidebar) quedaba en su propia línea, separado del número** (ej. "$" arriba y "41,35" abajo) cuando el widget quedaba con poco espacio horizontal — el navegador partía la línea justo en el espacio entre el signo y el valor, dentro del mismo `<span>` (`#tc-valor-txt`). Fix: `white-space:nowrap` en `.tc-display` (se hereda al span de adentro), así "$ 41,35" queda siempre pegado en una sola línea sin importar el ancho disponible.
+
+## 7. Pendientes anotados por el usuario (para la próxima tanda de cambios)
+
+Estos cambios fueron pedidos explícitamente pero **todavía no se implementaron** — el usuario prefiere juntar varios pedidos y aplicarlos todos de una vez:
+
+1. **Portal de clientes — mostrar el valor de cada obligación.** Hoy la lista "Tus obligaciones" del portal (`#portal`) muestra nombre + organismo + estado (vencido/próximo), pero no el importe de cada una. Pedido (4/9/2026): que se pueda hacer click en cada obligación para ver su valor, o alternativamente agregar una columna con el monto directamente en la lista. Depende de que cada obligación asignada a un cliente (`CLIENTE_OBLIG`) tenga o pueda calcular un importe asociado — hoy el catálogo de obligaciones (`OBLIGACIONES`) no necesariamente tiene un monto por tipo, así que además de la UI hay que decidir de dónde sale ese valor (¿fijo por tipo de obligación? ¿cargado por cliente? ¿el honorario del cliente prorrateado?) antes de implementarlo.
+
 ## 6. Relación con MINUTARIO_CONTABLE_SISTEMA (carpeta hermana)
 
 `Apps para Contador/MINUTARIO_CONTABLE_SISTEMA/` es un producto **distinto y ya con backend real** (Flask + librería `anthropic`, según su `requirements.txt`) — es el "Minutario Contable" que la landing de este mismo proyecto anuncia como "en desarrollo" (Fs. 07 de la presentación), con lectura automática de comprobantes por IA. No comparte código, base de datos ni sesión con el CRM Contable demo; son dos apps separadas de la misma suite ("Libro Mayor" vertical contador), igual que SueldoNET es una tercera pieza independiente. Este documento no mapea ese proyecto en detalle — queda para un mapeo propio si se retoma.
