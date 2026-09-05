@@ -147,6 +147,42 @@ Después de comparar este proyecto contra `MOTORMAX-crm` (ver su propio `MAPEO_A
 
 Verificado con Playwright (`test_contable_lote.js`): cambio de prioridad genera evento + actualiza "última modificación", el historial lo muestra, poner el mismo nombre en 2 clientes dispara el ⚠️ en ambos, resolver una tarea sin cliente asociado no bloquea el guardado con detalle vacío, y resolver una tarea con cliente asociado efectivamente agrega la entrada "Tarea resuelta" al historial de ese cliente. 0 errores de consola.
 
+## 5.6 Sexta tanda (5/9/2026) — logo real y favicon
+
+Primer logo real del proyecto (antes era un monograma SVG genérico "CC" en el
+deck de presentación, y texto plano en la app). Carpeta nueva `assets/` en la
+raíz del repo, generada a partir de 2 archivos que pasó el usuario (no viven
+en el repo, solo el resultado procesado):
+
+- **Favicon** (`favicon-16/32/48/180/192.png`): recortado a cuadrado desde el
+  original (226×170, no era cuadrado) y con las puntas redondeadas agregadas
+  a mano (máscara `ImageDraw.rounded_rectangle`, radio ≈22% del lado) — el
+  archivo fuente tenía esquinas rectas. Declarado en el `<head>` de **ambas**
+  páginas (`index.html` del deck y `app/index.html` de la app real).
+- **Ícono suelto** (`logo-icon.png`, recorte ajustado del logo completo sin
+  el wordmark): usado chico (22px) junto al texto "CRM Contable" en el
+  sidebar de la app (antes solo texto).
+- **Logo completo** (`logo-full.png`, icono + wordmark + tagline, reducido a
+  640px de ancho para no pesar): usado como banner arriba del formulario de
+  "Portal del cliente" — **con un fondo blanco propio (`.portal-logo`,
+  padding+border-radius)**, porque el PNG es transparente y el texto del
+  wordmark es azul marino oscuro: sin ese fondo blanco quedaba ilegible en
+  modo oscuro (verificado visualmente con Playwright antes y después del
+  fix). El ícono chico del sidebar no necesitó este tratamiento porque es
+  gráfico a color, no texto oscuro sobre transparencia.
+
+A propósito NO se tocó el logo propio del deck de presentación (`index.html`
+raíz, el monograma serif "CC" en círculo) — tiene su estética minimalista
+tipo "libro mayor" ya definida, y el pedido del usuario fue aplicar el logo
+"dentro de la app", no en la presentación comercial.
+
+**Pendiente, no resuelto hoy:** el favicon actual usa el ícono grande (libro
++ lupa + check) que el usuario ya había señalado como "demasiados elementos
+para verse chico" en el logo completo — en este caso puntual el ícono es más
+simple (menos elementos) así que se ve razonablemente bien reducido, pero si
+en el futuro se cambia de ícono conviene revisar legibilidad a 16×16 antes de
+darlo por bueno.
+
 ## 7. Pendientes anotados por el usuario (para la próxima tanda de cambios)
 
 Estos cambios fueron pedidos explícitamente pero **todavía no se implementaron** — el usuario prefiere juntar varios pedidos y aplicarlos todos de una vez:

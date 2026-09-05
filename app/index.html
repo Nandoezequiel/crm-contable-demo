@@ -6,6 +6,9 @@
 </head>
 <body>
 <title>CRM Contable</title>
+<link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../assets/favicon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="../assets/favicon-180.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.6.0/echarts.min.js"></script>
 <style>
@@ -130,8 +133,9 @@
     display:flex; flex-direction:column; padding:22px 14px;
     position:sticky; top:0; height:100vh;
   }
-  .brand{display:flex; align-items:baseline; gap:8px; padding:0 8px 20px; border-bottom:1px solid var(--line); margin-bottom:16px;}
-  .brand-mark{font-family:var(--font-display); font-size:22px; font-weight:600; letter-spacing:.2px;}
+  .brand{display:flex; align-items:center; gap:7px; padding:0 8px 20px; border-bottom:1px solid var(--line); margin-bottom:16px;}
+  .brand-icon{width:22px; height:22px; flex-shrink:0; border-radius:6px;}
+  .brand-mark{font-family:var(--font-display); font-size:19px; font-weight:600; letter-spacing:.2px; white-space:nowrap;}
   .brand-tag{font-size:10px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.08em;}
   nav.navrail{display:flex; flex-direction:column; gap:2px;}
   .navrail button{
@@ -316,6 +320,7 @@
   .portal-shell{min-height:100vh; background:var(--paper);}
   .portal-wrap{max-width:760px; margin:0 auto; padding:40px 24px 70px;}
   .portal-login{max-width:340px; margin:60px auto 0; text-align:center;}
+  .portal-logo{width:96px; height:auto; display:block; margin:0 auto 14px; background:#fff; border-radius:18px; padding:10px; box-sizing:border-box; box-shadow:0 1px 4px rgba(0,0,0,.12);}
   .portal-login .brand-mark{font-size:24px;}
   .portal-login p{color:var(--ink-soft); margin:4px 0 24px;}
   .portal-login .field{text-align:left;}
@@ -348,6 +353,7 @@
 <div class="app">
   <aside class="sidebar">
     <div class="brand">
+      <img class="brand-icon" src="../assets/logo-icon.png" alt="">
       <span class="brand-mark">CRM Contable</span>
     </div>
     <nav class="navrail" id="navrail">
@@ -748,7 +754,7 @@
 <div class="portal-shell" id="portal-shell" style="display:none;">
   <div class="portal-wrap">
     <div class="portal-login" id="portal-login">
-      <div class="brand-mark" style="font-family:var(--font-display); font-weight:600;">CRM Contable</div>
+      <img class="portal-logo" src="../assets/logo-full.png" alt="CRM Contable">
       <p>Portal del cliente</p>
       <div class="field"><label>Código de acceso</label><input id="portal-codigo" type="text" placeholder="Ej. DELTA-101" autocomplete="off"></div>
       <button class="btn btn-primary" id="btn-portal-entrar" style="width:100%; justify-content:center;">Ingresar</button>
