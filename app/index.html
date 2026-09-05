@@ -794,8 +794,10 @@
       <div>
         <h2 id="mc-titulo">Nuevo cliente</h2>
         <div class="sub" id="mc-sub"></div>
+        <div class="field-help" id="mc-ultima-mod" style="margin-top:2px;"></div>
       </div>
       <div style="display:flex; align-items:flex-start; gap:6px;">
+        <button type="button" class="btn btn-outline btn-sm" id="btn-historial-cliente" style="display:none;" title="Ver historial de cambios de este cliente (altas, prioridad, cierres, tareas resueltas)">📜 Historial</button>
         <button type="button" class="btn btn-outline btn-sm" id="btn-estado-cuenta" style="display:none;" title="Abre un documento imprimible con las obligaciones y el historial de cobros de este cliente">🖨️ Estado de cuenta</button>
         <button type="button" class="btn btn-outline btn-sm" id="btn-cerrar-reabrir-cliente" style="display:none;"></button>
         <button class="modal-close" data-close>&times;</button>
@@ -877,6 +879,45 @@
     <div class="modal-foot">
       <button class="btn btn-outline" data-close>Cancelar</button>
       <button class="btn btn-primary" id="btn-guardar-cliente">Guardar cliente</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ Modal: historial de cambios (log de auditoria por cliente) ============ -->
+<div class="modal-overlay" id="modal-historial-cliente">
+  <div class="modal-panel">
+    <div class="modal-head">
+      <div><h2>Historial de cambios</h2><div class="sub" id="mh-sub"></div></div>
+      <button class="modal-close" data-close>&times;</button>
+    </div>
+    <div class="modal-body" id="mh-lista"></div>
+  </div>
+</div>
+
+<!-- ============ Modal: resolver tarea (constancia de lo realizado) ============ -->
+<div class="modal-overlay" id="modal-resolver-tarea">
+  <div class="modal-panel">
+    <div class="modal-head">
+      <div><h2>Resolver tarea</h2><div class="sub" id="mrt-sub"></div></div>
+      <button class="modal-close" data-close>&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>¿La hiciste?</label>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn btn-sm btn-primary" id="mrt-si">Sí</button>
+          <button type="button" class="btn btn-sm btn-outline" id="mrt-no">No</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Detalle de lo realizado</label>
+        <textarea id="mrt-detalle" rows="3" placeholder="Opcional — qué pasó con esta tarea"></textarea>
+        <div class="field-help" id="mrt-detalle-help"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" data-close>Cancelar</button>
+      <button class="btn btn-primary" id="btn-guardar-resolucion-tarea">Guardar</button>
     </div>
   </div>
 </div>
@@ -1174,7 +1215,8 @@
     finFijos: 'LM_FIN_FIJOS_V1',
     finVariables: 'LM_FIN_VARIABLES_V1',
     finHistorial: 'LM_FIN_HISTORIAL_V1',
-    finConfig: 'LM_FIN_CONFIG_V1'
+    finConfig: 'LM_FIN_CONFIG_V1',
+    eventos: 'LM_EVENTOS_V1'
   };
   const LS_NOTIF_ACTIVAS = 'UI_NOTIF_ACTIVAS';
   const LS_NOTIF_MINUTOS = 'UI_NOTIF_MINUTOS';
@@ -1188,6 +1230,7 @@
   let CLIENTE_OBLIG = load(LS.clienteOblig, null);
   let COBROS = load(LS.cobros, null);
   let TAREAS = load(LS.tareas, null);
+  let EVENTOS = load(LS.eventos, null) || [];
   let TC = load(LS.tc, null);
   let PROSPECTOS = load(LS.prospectos, null);
   let FIN_FIJOS = load(LS.finFijos, null) || [];
@@ -1355,7 +1398,55 @@
     save(LS.tareas, TAREAS);
   }
 
-  function persistAll(){ save(LS.clientes, CLIENTES); save(LS.obligaciones, OBLIGACIONES); save(LS.clienteOblig, CLIENTE_OBLIG); save(LS.cobros, COBROS); save(LS.tareas, TAREAS); save(LS.prospectos, PROSPECTOS); }
+  function persistAll(){ save(LS.clientes, CLIENTES); save(LS.obligaciones, OBLIGACIONES); save(LS.clienteOblig, CLIENTE_OBLIG); save(LS.cobros, COBROS); save(LS.tareas, TAREAS); save(LS.prospectos, PROSPECTOS); save(LS.eventos, EVENTOS); }
+
+  /* ---------------- log de auditoria por cliente (append-only) ---------------- */
+  const TIPO_EVENTO_LABEL = { creado:'Alta', prioridad:'Prioridad', cerrado:'Cierre', reabierto:'Reapertura', tarea_resuelta:'Tarea resuelta' };
+  function registrarEvento(clienteId, tipo, detalle){
+    if(!clienteId) return;
+    EVENTOS.push({id:uid(), clienteId, fecha:new Date().toISOString(), tipo, detalle});
+  }
+  function eventosDeCliente(clienteId){
+    return EVENTOS.filter(e => e.clienteId === clienteId).sort((a,b) => b.fecha.localeCompare(a.fecha));
+  }
+  function fmtFechaHora(iso){
+    const d = new Date(iso);
+    if(isNaN(d.getTime())) return iso;
+    const pad = n => String(n).padStart(2,'0');
+    return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  function actualizarUltimaModificacion(clienteId){
+    const eventos = eventosDeCliente(clienteId);
+    $('#mc-ultima-mod').textContent = eventos.length ? `Última modificación: ${fmtFechaHora(eventos[0].fecha)}` : '';
+  }
+  function abrirHistorialCliente(clienteId){
+    const c = clienteById(clienteId);
+    if(!c) return;
+    const eventos = eventosDeCliente(clienteId);
+    $('#mh-sub').textContent = c.nombre;
+    $('#mh-lista').innerHTML = eventos.length ? eventos.map(e => `
+      <div class="list-row">
+        <div class="list-main"><span class="list-title">${esc(TIPO_EVENTO_LABEL[e.tipo] || e.tipo)}</span><span class="list-sub">${esc(e.detalle)}</span></div>
+        <div class="list-side cell-faint">${fmtFechaHora(e.fecha)}</div>
+      </div>`).join('') : `<div class="empty-state">Todavía no hay cambios registrados para este cliente.</div>`;
+    abrirModal('modal-historial-cliente');
+  }
+  $('#btn-historial-cliente').addEventListener('click', () => { if(clienteEnEdicion) abrirHistorialCliente(clienteEnEdicion); });
+
+  /* ---------------- deteccion de posibles duplicados (aviso, no bloquea) ---------------- */
+  function detectarDuplicados(){
+    const porTel = {}, porNombre = {};
+    CLIENTES.forEach(c => {
+      const tel = (c.telefono||'').replace(/\D/g,'');
+      if(tel) (porTel[tel] = porTel[tel] || []).push(c.id);
+      const nom = (c.nombre||'').trim().toLowerCase();
+      if(nom) (porNombre[nom] = porNombre[nom] || []).push(c.id);
+    });
+    const dup = new Set();
+    Object.values(porTel).forEach(ids => { if(ids.length > 1) ids.forEach(id => dup.add(id)); });
+    Object.values(porNombre).forEach(ids => { if(ids.length > 1) ids.forEach(id => dup.add(id)); });
+    return dup;
+  }
 
   /* ---------------- cálculos de dominio ---------------- */
   function clienteById(id){ return CLIENTES.find(c => c.id === id); }
@@ -1770,14 +1861,16 @@
   function renderClientes(){
     let filtrados = ordenarClientes(clientesFiltradosActuales());
     const colspan = modoSeleccionClientes ? 8 : 7;
+    const duplicados = detectarDuplicados();
     $('#tbody-clientes').innerHTML = filtrados.map(c => {
       const peor = peorEstadoCliente(c.id);
       const etiquetasHtml = (c.etiquetas&&c.etiquetas.length) ? `<div style="margin-top:3px; display:flex; gap:4px; flex-wrap:wrap;">${c.etiquetas.map(e=>`<span class="chip chip--neutral">${esc(e)}</span>`).join('')}</div>` : '';
       const cerradoBadge = c.activo===false ? `<span class="chip chip--neutral" style="margin-left:6px;">Cerrado</span>` : '';
+      const dupBadge = duplicados.has(c.id) ? `<span title="Hay otro cliente con el mismo teléfono o nombre — revisar posible duplicado." style="margin-left:6px; cursor:help;">⚠️</span>` : '';
       const checkTd = modoSeleccionClientes ? `<td onclick="event.stopPropagation()"><input type="checkbox" class="chk-cliente" data-id="${c.id}" ${clientesSeleccionados.has(c.id)?'checked':''}></td>` : '';
       return `<tr class="clickable" data-id="${c.id}">
         ${checkTd}
-        <td><div class="cell-name">${esc(c.nombre)}${cerradoBadge} ${c.driveUrl ? `<a class="folder-link" href="${esc(c.driveUrl)}" target="_blank" rel="noopener" title="Abrir carpeta digital" onclick="event.stopPropagation()">${folderIcon}</a>` : ''}</div><div class="cell-faint">${esc(c.ciRut)}</div>${etiquetasHtml}</td>
+        <td><div class="cell-name">${esc(c.nombre)}${cerradoBadge}${dupBadge} ${c.driveUrl ? `<a class="folder-link" href="${esc(c.driveUrl)}" target="_blank" rel="noopener" title="Abrir carpeta digital" onclick="event.stopPropagation()">${folderIcon}</a>` : ''}</div><div class="cell-faint">${esc(c.ciRut)}</div>${etiquetasHtml}</td>
         <td>${regTag(c.regimen)}</td>
         <td><span class="reg-tag"><span class="dot" style="background:${PRIORIDAD_COLOR[c.prioridad||'leve']}"></span>${PRIORIDAD_LABEL[c.prioridad||'leve']}</span></td>
         <td>${esc(c.telefono)}</td>
@@ -1833,7 +1926,14 @@
     if(!clientesSeleccionados.size) return;
     const prioridad = $('#sel-prioridad-lote').value;
     const n = clientesSeleccionados.size;
-    clientesSeleccionados.forEach(id => { const c = clienteById(id); if(c) c.prioridad = prioridad; });
+    clientesSeleccionados.forEach(id => {
+      const c = clienteById(id);
+      if(!c) return;
+      if((c.prioridad||'leve') !== prioridad){
+        registrarEvento(id, 'prioridad', `Prioridad cambiada de "${PRIORIDAD_LABEL[c.prioridad||'leve']}" a "${PRIORIDAD_LABEL[prioridad]}" (cambio en lote).`);
+      }
+      c.prioridad = prioridad;
+    });
     persistAll();
     renderClientes();
     mostrarToast(`Prioridad "${PRIORIDAD_LABEL[prioridad]}" aplicada a ${n} cliente(s).`);
@@ -1858,7 +1958,12 @@
     if(!clientesSeleccionados.size) return;
     const nuevoActivo = mostrarClientesCerrados;
     const n = clientesSeleccionados.size;
-    clientesSeleccionados.forEach(id => { const c = clienteById(id); if(c) c.activo = nuevoActivo; });
+    clientesSeleccionados.forEach(id => {
+      const c = clienteById(id);
+      if(!c) return;
+      registrarEvento(id, nuevoActivo ? 'reabierto' : 'cerrado', (nuevoActivo ? 'Cliente reabierto' : 'Cliente cerrado') + ' (cambio en lote).');
+      c.activo = nuevoActivo;
+    });
     persistAll();
     clientesSeleccionados.clear();
     renderClientes();
@@ -2206,9 +2311,12 @@
     btn.style.display = 'inline-flex';
     btn.textContent = c.activo===false ? '↺ Reabrir cliente' : '🗄️ Cerrar cliente';
     btn.onclick = () => {
-      c.activo = c.activo===false ? true : false;
+      const nuevoEstado = c.activo===false ? true : false;
+      registrarEvento(c.id, nuevoEstado ? 'reabierto' : 'cerrado', nuevoEstado ? 'Cliente reabierto.' : 'Cliente cerrado.');
+      c.activo = nuevoEstado;
       persistAll();
       actualizarBotonCerrarReabrir(c);
+      actualizarUltimaModificacion(c.id);
       renderClientes();
     };
   }
@@ -2249,6 +2357,8 @@
     actualizarBotonCerrarReabrir(c);
     renderEtiquetasCliente(c.id);
     $('#btn-estado-cuenta').style.display = 'inline-flex';
+    $('#btn-historial-cliente').style.display = 'inline-flex';
+    actualizarUltimaModificacion(c.id);
     $('#f-nombre').value = c.nombre;
     $('#f-tipo').value = c.tipo;
     $('#f-cirut').value = c.ciRut;
@@ -2274,6 +2384,8 @@
     $('#mc-titulo').textContent = 'Nuevo cliente';
     $('#mc-sub').textContent = '';
     $('#btn-estado-cuenta').style.display = 'none';
+    $('#btn-historial-cliente').style.display = 'none';
+    $('#mc-ultima-mod').textContent = '';
     $('#btn-cerrar-reabrir-cliente').style.display = 'none';
     ['f-nombre','f-cirut','f-tel','f-email','f-notas','f-drive'].forEach(id => $('#'+id).value = '');
     $('#f-tipo').value = 'fisica';
@@ -2412,9 +2524,15 @@
     };
     if(!datos.nombre){ $('#f-nombre').focus(); return; }
     if(clienteEnEdicion){
-      Object.assign(clienteById(clienteEnEdicion), datos);
+      const actual = clienteById(clienteEnEdicion);
+      if((actual.prioridad||'leve') !== datos.prioridad){
+        registrarEvento(clienteEnEdicion, 'prioridad', `Prioridad cambiada de "${PRIORIDAD_LABEL[actual.prioridad||'leve']}" a "${PRIORIDAD_LABEL[datos.prioridad]}".`);
+      }
+      Object.assign(actual, datos);
     } else {
-      CLIENTES.push(Object.assign({id:uid(), fechaAlta:hoyISO(), activo:true, codigoAcceso:generarCodigoAcceso(datos.nombre), etiquetas:[]}, datos));
+      const nuevo = Object.assign({id:uid(), fechaAlta:hoyISO(), activo:true, codigoAcceso:generarCodigoAcceso(datos.nombre), etiquetas:[]}, datos);
+      CLIENTES.push(nuevo);
+      registrarEvento(nuevo.id, 'creado', 'Cliente creado.');
     }
     persistAll();
     cerrarModal('modal-cliente');
@@ -2771,14 +2889,16 @@
     $('#mda-tareas').innerHTML = tareasDia.length ? tareasDia.map(t => {
       const cliente = t.clienteId ? clienteById(t.clienteId) : null;
       const partes = [t.hora ? t.hora : null, cliente ? cliente.nombre : null, t.notas || null].filter(Boolean);
+      const constanciaHtml = t.hecha ? `<div class="cell-faint" style="margin-top:2px;">${t.hechaSiNo===false?'✗ No hecha':'✓ Hecha'}${t.detalleResolucion ? ' — '+esc(t.detalleResolucion) : ''}</div>` : '';
       return `<div class="list-row">
         <div class="list-main">
           <span class="list-title" style="${t.hecha?'text-decoration:line-through; color:var(--ink-faint);':''}">${esc(t.titulo)}</span>
           <span class="list-sub">${esc(partes.join(' · '))}</span>
+          ${constanciaHtml}
         </div>
         <div class="list-side">
           ${t.hora ? `<a class="btn btn-sm btn-outline" target="_blank" rel="noopener" href="${calendarLink(t.titulo, t.fecha, t.notas || (cliente?`Tarea vinculada a ${cliente.nombre}.`:'Tarea del estudio contable.'), t.hora)}" title="Agendar en tu Google Calendar">📅</a>` : ''}
-          <button type="button" class="btn btn-sm ${t.hecha?'btn-outline':'btn-primary'}" data-tarea-toggle="${t.id}">${t.hecha ? '↺ Reabrir' : '✓ Hecha'}</button>
+          <button type="button" class="btn btn-sm ${t.hecha?'btn-outline':'btn-primary'}" data-tarea-toggle="${t.id}">${t.hecha ? '↺ Reabrir' : '✓ Resolver'}</button>
           <button type="button" class="btn btn-ghost btn-sm" data-tarea-borrar="${t.id}" title="Borrar tarea">✕</button>
         </div>
       </div>`;
@@ -2786,7 +2906,13 @@
 
     $$('#mda-tareas [data-tarea-toggle]').forEach(b => b.addEventListener('click', () => {
       const t = TAREAS.find(x => x.id === b.dataset.tareaToggle);
-      if(t){ t.hecha = !t.hecha; persistAll(); pintarDetalleDiaAgenda(); renderAgenda(); }
+      if(!t) return;
+      if(t.hecha){
+        t.hecha = false;
+        persistAll(); pintarDetalleDiaAgenda(); renderAgenda();
+      } else {
+        abrirResolverTarea(t.id);
+      }
     }));
     $$('#mda-tareas [data-tarea-borrar]').forEach(b => b.addEventListener('click', () => {
       const t = TAREAS.find(x => x.id === b.dataset.tareaBorrar);
@@ -2795,6 +2921,46 @@
       persistAll(); pintarDetalleDiaAgenda(); renderAgenda();
     }));
   }
+
+  /* ---------------- resolver tarea (constancia opcional, nunca bloquea en Contable) ---------------- */
+  let tareaEnResolucion = null;
+  let resolucionSiNo = true;
+  function marcarResolucionSiNo(valor){
+    resolucionSiNo = valor;
+    $('#mrt-si').classList.toggle('btn-primary', valor===true);
+    $('#mrt-si').classList.toggle('btn-outline', valor!==true);
+    $('#mrt-no').classList.toggle('btn-primary', valor===false);
+    $('#mrt-no').classList.toggle('btn-outline', valor!==false);
+  }
+  function abrirResolverTarea(tareaId){
+    const t = TAREAS.find(x => x.id === tareaId);
+    if(!t) return;
+    tareaEnResolucion = tareaId;
+    const cliente = t.clienteId ? clienteById(t.clienteId) : null;
+    $('#mrt-sub').textContent = t.titulo + (cliente ? ` · ${cliente.nombre}` : '');
+    marcarResolucionSiNo(t.hechaSiNo !== false);
+    $('#mrt-detalle').value = t.detalleResolucion || '';
+    $('#mrt-detalle-help').textContent = 'Opcional — si el cliente tiene ficha, esto se agrega a su historial de cambios.';
+    abrirModal('modal-resolver-tarea');
+    $('#mrt-detalle').focus();
+  }
+  $('#mrt-si').addEventListener('click', () => marcarResolucionSiNo(true));
+  $('#mrt-no').addEventListener('click', () => marcarResolucionSiNo(false));
+  $('#btn-guardar-resolucion-tarea').addEventListener('click', () => {
+    const t = TAREAS.find(x => x.id === tareaEnResolucion);
+    if(!t) return;
+    const detalle = $('#mrt-detalle').value.trim();
+    t.hecha = true;
+    t.hechaSiNo = resolucionSiNo;
+    t.detalleResolucion = detalle;
+    if(t.clienteId){
+      registrarEvento(t.clienteId, 'tarea_resuelta', `Tarea "${t.titulo}" marcada como ${resolucionSiNo ? 'hecha' : 'no hecha'}.${detalle ? ' Detalle: ' + detalle : ''}`);
+    }
+    persistAll();
+    cerrarModal('modal-resolver-tarea');
+    pintarDetalleDiaAgenda();
+    renderAgenda();
+  });
 
   $('#toggle-nueva-tarea').addEventListener('click', () => {
     $('#mt-titulo').value = ''; $('#mt-notas').value = ''; $('#mt-cliente').value = ''; $('#mt-hora').value = '';
