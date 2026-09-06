@@ -348,6 +348,30 @@
     #imprimible th, #imprimible td{text-align:left; padding:6px 8px; border-bottom:1px solid #ccc; font-size:12px; color:#000;}
     #imprimible th{font-size:10px; text-transform:uppercase; color:#555;}
   }
+
+  /* ---------- cajón de sugerencias/errores (mismo mecanismo que Minutario) ---------- */
+  .sugerencia-fab{position:fixed; right:22px; bottom:22px; z-index:80; display:flex; align-items:center; gap:9px; background:var(--accent); color:var(--accent-ink); border:none; border-radius:999px; padding:14px 20px 14px 16px; box-shadow:var(--shadow); font-weight:600; font-size:13px; cursor:pointer;}
+  .sugerencia-fab:hover{filter:brightness(1.06);}
+  .sugerencia-fab .icon{width:18px; height:18px;}
+  .sugerencia-tipo{display:flex; gap:8px; margin-bottom:12px;}
+  .sug-tipo-btn{flex:1; background:var(--surface-2); border:1px solid var(--line); color:var(--ink-soft); padding:9px 8px; border-radius:8px; font-size:12.5px; font-weight:600; cursor:pointer;}
+  .sug-tipo-btn.active{background:var(--accent-soft); border-color:var(--accent); color:var(--accent);}
+  .sugerencia-campo{position:relative;}
+  .sugerencia-campo textarea{padding-right:44px;}
+  .sug-mic-btn{position:absolute; right:8px; bottom:8px; width:30px; height:30px; border-radius:50%; border:1px solid var(--line); background:var(--surface); color:var(--ink-soft); display:flex; align-items:center; justify-content:center; cursor:pointer;}
+  .sug-mic-btn .icon{width:15px; height:15px;}
+  .sug-mic-btn.active{background:var(--warn); border-color:var(--warn); color:#fff; animation:sugmicpulse 1.1s ease-in-out infinite;}
+  @keyframes sugmicpulse{0%,100%{box-shadow:0 0 0 0 rgba(184,96,15,.35);} 50%{box-shadow:0 0 0 7px rgba(184,96,15,0);}}
+  .sugerencia-mic-status{font-size:11.5px; color:var(--warn); margin-top:6px;}
+  .sugerencia-captura{margin-top:14px;}
+  .sugerencia-captura-botones{display:flex; gap:8px;}
+  .sugerencia-captura-botones .btn{flex:1; padding:9px 10px; font-size:12px; display:flex; align-items:center; justify-content:center; gap:6px;}
+  .sugerencia-captura-botones .icon{width:14px; height:14px;}
+  .sugerencia-captura-ayuda{font-size:11.5px; color:var(--ink-faint); background:var(--surface-2); border-radius:8px; padding:9px 12px; margin-top:10px;}
+  .sugerencia-captura-preview{margin-top:10px; position:relative; border:1px solid var(--line); border-radius:8px; overflow:hidden;}
+  .sugerencia-captura-preview img{display:block; width:100%; max-height:220px; object-fit:contain; background:var(--surface-2);}
+  .sug-quitar-captura{position:absolute; top:6px; right:6px; background:rgba(0,0,0,.6); color:#fff; border:none; border-radius:6px; padding:4px 9px; font-size:11px; cursor:pointer;}
+  .sugerencia-alert{margin-top:12px; font-size:12px; color:var(--warn); background:var(--warn-bg); border-radius:8px; padding:9px 12px;}
 </style>
 
 <div class="app">
@@ -1052,6 +1076,56 @@
         <button class="btn btn-outline" data-close>Cancelar</button>
         <button class="btn btn-primary" id="btn-guardar-cobro-editado">Guardar cambios</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ Cajón de sugerencias/errores ============ -->
+<button type="button" class="sugerencia-fab" id="sugerenciaFab" title="Dejar una sugerencia o reportar un error">
+  <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 21h6v-1H9v1zm3-19a7 7 0 0 0-4 12.7V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.3A7 7 0 0 0 12 2z"/></svg>
+  Sugerencia
+</button>
+
+<div class="modal-overlay" id="modal-sugerencia">
+  <div class="modal-panel">
+    <div class="modal-head">
+      <div><h2>Sugerencia</h2><div class="sub">Contanos qué te falta, un error que encontraste, o una idea.</div></div>
+      <button class="modal-close" data-close>&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="sugerencia-tipo">
+        <button type="button" class="sug-tipo-btn active" data-tipo="sugerencia">Sugerencia</button>
+        <button type="button" class="sug-tipo-btn" data-tipo="error">Encontré un error</button>
+      </div>
+      <div class="field sugerencia-campo">
+        <label for="sugerencia-texto">Mensaje</label>
+        <textarea id="sugerencia-texto" rows="4" placeholder="Escribí acá, o grabá con el micrófono…"></textarea>
+        <button type="button" class="sug-mic-btn" id="sugerencia-mic" title="Hablar en vez de escribir">
+          <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a7 7 0 0 1-14 0H3a9 9 0 0 0 8 8.94V22h2v-2.06A9 9 0 0 0 21 11h-2z"/></svg>
+        </button>
+      </div>
+      <div class="sugerencia-mic-status" id="sugerencia-mic-status" hidden>Escuchando…</div>
+
+      <div class="sugerencia-captura">
+        <div class="sugerencia-captura-botones">
+          <button type="button" class="btn btn-outline" id="sugerencia-tomar-captura">
+            <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 3l-1.8 2H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.2L15 3H9zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg>
+            Tomar captura
+          </button>
+          <button type="button" class="btn btn-outline" id="sugerencia-pegar-captura">Pegar captura</button>
+        </div>
+        <div class="sugerencia-captura-ayuda" id="sugerencia-captura-ayuda" hidden></div>
+        <div class="sugerencia-captura-preview" id="sugerencia-captura-preview" hidden>
+          <img id="sugerencia-captura-img" alt="Captura adjunta">
+          <button type="button" class="sug-quitar-captura" id="sugerencia-quitar-captura">Quitar</button>
+        </div>
+      </div>
+
+      <div class="sugerencia-alert" id="sugerencia-alert" hidden></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" data-close>Cancelar</button>
+      <button class="btn btn-primary" id="sugerencia-enviar-btn">Enviar</button>
     </div>
   </div>
 </div>
@@ -2284,6 +2358,174 @@
     $$('[data-close]', ov).forEach(b => b.addEventListener('click', () => cerrarModal(ov.id)));
   });
   document.addEventListener('keydown', e => { if(e.key==='Escape') $$('.modal-overlay.open').forEach(ov => cerrarModal(ov.id)); });
+
+  /* ---------------- cajón de sugerencias/errores ----------------
+     Este demo es un sitio estático (Cloudflare Pages, sin backend propio),
+     así que el envío se manda al CRM Notarial (que sí tiene SMTP configurado
+     en Render) por un endpoint público pensado justo para esto -- ver
+     /api/sugerencia-externa en crm_project/servidor.py de ese repo. */
+  (function(){
+    const URL_SUGERENCIA_EXTERNA = 'https://crm-notarial.onrender.com/api/sugerencia-externa';
+    const fab = document.getElementById('sugerenciaFab');
+    const tipoBtns = $$('.sug-tipo-btn');
+    const textarea = document.getElementById('sugerencia-texto');
+    const micBtn = document.getElementById('sugerencia-mic');
+    const micStatus = document.getElementById('sugerencia-mic-status');
+    const tomarBtn = document.getElementById('sugerencia-tomar-captura');
+    const pegarBtn = document.getElementById('sugerencia-pegar-captura');
+    const ayuda = document.getElementById('sugerencia-captura-ayuda');
+    const preview = document.getElementById('sugerencia-captura-preview');
+    const img = document.getElementById('sugerencia-captura-img');
+    const quitarBtn = document.getElementById('sugerencia-quitar-captura');
+    const alertBox = document.getElementById('sugerencia-alert');
+    const enviarBtn = document.getElementById('sugerencia-enviar-btn');
+
+    let tipoSeleccionado = 'sugerencia';
+    let capturaBlob = null;
+    let capturaUrl = null;
+
+    function pantallaActual(){
+      const activo = document.querySelector('#navrail button.active');
+      return activo ? activo.textContent.trim() : '';
+    }
+
+    if (fab) fab.addEventListener('click', () => {
+      alertBox.hidden = true;
+      abrirModal('modal-sugerencia');
+      textarea.focus();
+    });
+
+    function seleccionarTipo(tipo){
+      tipoSeleccionado = tipo;
+      tipoBtns.forEach(b => b.classList.toggle('active', b.dataset.tipo === tipo));
+    }
+    tipoBtns.forEach(b => b.addEventListener('click', () => seleccionarTipo(b.dataset.tipo)));
+
+    // ---- audio a texto ----
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null, recognizing = false, textoBase = '';
+    if (SpeechRecognition){
+      recognition = new SpeechRecognition();
+      recognition.lang = 'es-UY';
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.onresult = e => {
+        let final = '', interim = '';
+        for (let i = e.resultIndex; i < e.results.length; i++){
+          if (e.results[i].isFinal) final += e.results[i][0].transcript;
+          else interim += e.results[i][0].transcript;
+        }
+        if (final) textoBase = (textoBase ? textoBase + ' ' : '') + final.trim();
+        textarea.value = textoBase + (interim ? ' ' + interim : '');
+      };
+      recognition.onerror = () => pararMic();
+      recognition.onend = () => { if (recognizing) pararMic(); };
+    } else if (micBtn){
+      micBtn.hidden = true;
+    }
+    function pararMic(){
+      recognizing = false;
+      if (micBtn) micBtn.classList.remove('active');
+      if (micStatus) micStatus.hidden = true;
+      if (recognition){ try { recognition.stop(); } catch(e){} }
+    }
+    if (micBtn) micBtn.addEventListener('click', () => {
+      if (!recognition) return;
+      if (recognizing){ pararMic(); return; }
+      textoBase = textarea.value.trim();
+      recognizing = true;
+      micBtn.classList.add('active');
+      micStatus.hidden = false;
+      try { recognition.start(); } catch(e){}
+    });
+
+    // ---- captura de pantalla ----
+    function adjuntarCaptura(blob){
+      capturaBlob = blob;
+      if (capturaUrl) URL.revokeObjectURL(capturaUrl);
+      capturaUrl = URL.createObjectURL(blob);
+      img.src = capturaUrl;
+      preview.hidden = false;
+      ayuda.hidden = true;
+    }
+    if (quitarBtn) quitarBtn.addEventListener('click', () => { capturaBlob = null; preview.hidden = true; });
+    if (tomarBtn) tomarBtn.addEventListener('click', () => {
+      try { window.location.href = 'ms-screenclip:'; } catch(e){}
+      ayuda.hidden = false;
+      ayuda.textContent = 'Se debería haber abierto tu Herramienta de Recortes — seleccioná la zona. ' +
+        'Si no pasó nada, abrila vos (Inicio → Recortes) o usá Windows + Shift + S. ' +
+        'Cuando termines, tocá "Pegar captura" acá abajo.';
+    });
+    function mostrarAyudaPegado(){
+      ayuda.hidden = false;
+      ayuda.textContent = 'No pudimos leer el portapapeles solos. Con la captura ya sacada, hacé click acá adentro y apretá Ctrl+V para pegarla.';
+    }
+    if (pegarBtn) pegarBtn.addEventListener('click', () => {
+      if (navigator.clipboard && navigator.clipboard.read){
+        navigator.clipboard.read().then(items => {
+          for (const item of items){
+            const tipoImg = item.types.find(t => t.indexOf('image/') === 0);
+            if (tipoImg){ item.getType(tipoImg).then(adjuntarCaptura); return; }
+          }
+          mostrarAyudaPegado();
+        }).catch(mostrarAyudaPegado);
+      } else {
+        mostrarAyudaPegado();
+      }
+    });
+    document.addEventListener('paste', e => {
+      const overlay = document.getElementById('modal-sugerencia');
+      if (!overlay.classList.contains('open')) return;
+      const items = (e.clipboardData || {}).items || [];
+      for (const item of items){
+        if (item.type.indexOf('image/') === 0){
+          adjuntarCaptura(item.getAsFile());
+          e.preventDefault();
+          return;
+        }
+      }
+    });
+
+    // ---- enviar ----
+    if (enviarBtn) enviarBtn.addEventListener('click', () => {
+      const texto = textarea.value.trim();
+      if (!texto && !capturaBlob){
+        alertBox.hidden = false;
+        alertBox.textContent = 'Escribí algo o adjuntá una captura antes de enviar.';
+        return;
+      }
+      alertBox.hidden = true;
+
+      const fd = new FormData();
+      fd.append('origen', 'CRM Contable (demo)');
+      fd.append('tipo', tipoSeleccionado);
+      fd.append('texto', texto);
+      fd.append('pantalla', pantallaActual());
+      if (capturaBlob) fd.append('captura', capturaBlob, 'captura.png');
+
+      enviarBtn.disabled = true;
+      enviarBtn.textContent = 'Enviando…';
+      fetch(URL_SUGERENCIA_EXTERNA, { method: 'POST', body: fd })
+        .then(r => r.ok ? r.json() : r.json().then(err => { throw new Error(err.error || 'No se pudo enviar.'); }))
+        .then(() => {
+          textarea.value = '';
+          textoBase = '';
+          capturaBlob = null;
+          preview.hidden = true;
+          seleccionarTipo('sugerencia');
+          cerrarModal('modal-sugerencia');
+          mostrarToast('¡Gracias! Lo vamos a revisar.');
+        })
+        .catch(err => {
+          alertBox.hidden = false;
+          alertBox.textContent = err.message || 'No se pudo enviar. Probá de nuevo en un momento.';
+        })
+        .finally(() => {
+          enviarBtn.disabled = false;
+          enviarBtn.textContent = 'Enviar';
+        });
+    });
+  })();
 
   /* ---------------- ficha / alta de cliente ---------------- */
   let clienteEnEdicion = null;

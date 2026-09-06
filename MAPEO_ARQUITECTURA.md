@@ -183,6 +183,38 @@ simple (menos elementos) así que se ve razonablemente bien reducido, pero si
 en el futuro se cambia de ícono conviene revisar legibilidad a 16×16 antes de
 darlo por bueno.
 
+## 5.7 Séptima tanda (5/9/2026) — cajón de sugerencias/errores (copiado de Minutario)
+
+`app/index.html` (la app real, no el deck) suma el mismo cajón de
+sugerencias que ya tenía Minutario y que ese mismo día se copió también al
+CRM Notarial principal: botón flotante 💡 "Sugerencia" abajo a la derecha,
+modal con selector Sugerencia/Error, mensaje por texto o por voz
+(`SpeechRecognition` del navegador, se oculta solo si el navegador no lo
+soporta), y captura de pantalla adjunta (`ms-screenclip:` + pegado desde
+portapapeles o Ctrl+V manual). Reusa el modal genérico que ya existía en
+este archivo (`abrirModal`/`cerrarModal`/`data-close`), no uno nuevo.
+
+**La diferencia clave frente a Minutario y al CRM Notarial: este repo es un
+sitio estático en Cloudflare Pages, sin backend propio, así que no puede
+mandar el mail por sí solo.** En vez de sumarle su propio SMTP (una cuenta
+y una configuración nuevas para mantener solo para esto), el envío le pega
+directo al CRM Notarial (`https://crm-notarial.onrender.com/api/sugerencia-externa`,
+endpoint nuevo, sin login, pensado justo para este caso — ver
+`CRM_SISTEMA/MAPEO_ARQUITECTURA.md`), que ya tiene el SMTP configurado en
+Render. El mail llega a la misma casilla de siempre, con el asunto marcando
+`[CRM Contable (demo)]` para diferenciarlo de las sugerencias que manda una
+escribana real. Esto significa que el cajón de sugerencias de este demo
+**depende de que el servicio de Render esté despierto** — si algún día se
+nota que un envío no llegó, lo primero a revisar es que `crm-notarial.onrender.com`
+no esté dormido (plan free de Render duerme el servicio sin tráfico).
+
+Probado con Playwright interceptando la llamada de red (sin pegarle a
+producción desde una corrida de test): abrir el modal, toggle de tipo,
+captura pegada por evento `paste` sintético, validación de mensaje vacío,
+que el `FormData` que viaja lleve bien `origen`/`tipo`/`texto`/`captura`, y
+el camino de error de red (falla del lado del CRM Notarial, muestra alerta
+y no cierra el modal). 0 errores de consola reales.
+
 ## 7. Pendientes anotados por el usuario (para la próxima tanda de cambios)
 
 Estos cambios fueron pedidos explícitamente pero **todavía no se implementaron** — el usuario prefiere juntar varios pedidos y aplicarlos todos de una vez:
