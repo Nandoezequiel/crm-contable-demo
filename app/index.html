@@ -1519,18 +1519,31 @@
   $('#btn-historial-cliente').addEventListener('click', () => { if(clienteEnEdicion) abrirHistorialCliente(clienteEnEdicion); });
 
   /* ---------------- deteccion de posibles duplicados (aviso, no bloquea) ---------------- */
+  // campo -> normalización; la usan la tabla (⚠️) y el aviso antes del alta
+  const CLAVES_DUP = {
+    'teléfono': c => (c.telefono||'').replace(/\D/g,''),
+    'CI/RUT':   c => (c.ciRut||'').replace(/\D/g,''),   // "RUT 21.045.887.0012" == "210458870012"
+    'email':    c => (c.email||'').trim().toLowerCase(),
+    'nombre':   c => (c.nombre||'').trim().toLowerCase(),
+  };
   function detectarDuplicados(){
-    const porTel = {}, porNombre = {};
-    CLIENTES.forEach(c => {
-      const tel = (c.telefono||'').replace(/\D/g,'');
-      if(tel) (porTel[tel] = porTel[tel] || []).push(c.id);
-      const nom = (c.nombre||'').trim().toLowerCase();
-      if(nom) (porNombre[nom] = porNombre[nom] || []).push(c.id);
-    });
+    const grupos = {};
+    CLIENTES.forEach(c => Object.entries(CLAVES_DUP).forEach(([campo, norm]) => {
+      const v = norm(c);
+      if(v) (grupos[campo+'|'+v] = grupos[campo+'|'+v] || []).push(c.id);
+    }));
     const dup = new Set();
-    Object.values(porTel).forEach(ids => { if(ids.length > 1) ids.forEach(id => dup.add(id)); });
-    Object.values(porNombre).forEach(ids => { if(ids.length > 1) ids.forEach(id => dup.add(id)); });
+    Object.values(grupos).forEach(ids => { if(ids.length > 1) ids.forEach(id => dup.add(id)); });
     return dup;
+  }
+  function buscarDuplicado(datos){
+    for(const c of CLIENTES){
+      for(const [campo, norm] of Object.entries(CLAVES_DUP)){
+        const v = norm(datos);
+        if(v && v === norm(c)) return { cliente:c, campo };
+      }
+    }
+    return null;
   }
 
   /* ---------------- cálculos de dominio ---------------- */
@@ -1951,7 +1964,7 @@
       const peor = peorEstadoCliente(c.id);
       const etiquetasHtml = (c.etiquetas&&c.etiquetas.length) ? `<div style="margin-top:3px; display:flex; gap:4px; flex-wrap:wrap;">${c.etiquetas.map(e=>`<span class="chip chip--neutral">${esc(e)}</span>`).join('')}</div>` : '';
       const cerradoBadge = c.activo===false ? `<span class="chip chip--neutral" style="margin-left:6px;">Cerrado</span>` : '';
-      const dupBadge = duplicados.has(c.id) ? `<span title="Hay otro cliente con el mismo teléfono o nombre — revisar posible duplicado." style="margin-left:6px; cursor:help;">⚠️</span>` : '';
+      const dupBadge = duplicados.has(c.id) ? `<span title="Hay otro cliente con el mismo teléfono, CI/RUT, email o nombre — revisar posible duplicado." style="margin-left:6px; cursor:help;">⚠️</span>` : '';
       const checkTd = modoSeleccionClientes ? `<td onclick="event.stopPropagation()"><input type="checkbox" class="chk-cliente" data-id="${c.id}" ${clientesSeleccionados.has(c.id)?'checked':''}></td>` : '';
       return `<tr class="clickable" data-id="${c.id}">
         ${checkTd}
@@ -2783,6 +2796,8 @@
       }
       Object.assign(actual, datos);
     } else {
+      const dup = buscarDuplicado(datos);
+      if(dup && !confirm(`Ya existe un cliente con el mismo ${dup.campo}: ${dup.cliente.nombre}${dup.cliente.activo === false ? ' (cerrado)' : ''}.\n\n¿Guardar igual como cliente nuevo?`)) return;
       const nuevo = Object.assign({id:uid(), fechaAlta:hoyISO(), activo:true, codigoAcceso:generarCodigoAcceso(datos.nombre), etiquetas:[]}, datos);
       CLIENTES.push(nuevo);
       registrarEvento(nuevo.id, 'creado', 'Cliente creado.');
